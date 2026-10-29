@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maven — הצ'אט החכם של הקהילה שלך</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="maven.css" />
+<script src="config.js"></script>
+<style>
+/* hero */
+.hero {
+  padding: 80px 32px 90px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79, 70, 229, 0.06), transparent 70%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, black 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--indigo);
+  padding: 6px 14px;
+  background: var(--indigo-soft);
+  border: 1px solid var(--indigo-line);
+  border-radius: 999px;
+  margin-bottom: 22px;
+}
+.eyebrow .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--indigo);
+  box-shadow: 0 0 8px var(--indigo);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.hero h1 {
+  font-size: clamp(40px, 6.5vw, 76px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -1.6px;
+  color: var(--text);
+  margin-bottom: 22px;
+  max-width: 900px;
+  margin-inline: auto;
+}
+.hero h1 .accent {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+.hero-sub {
+  font-size: clamp(16px, 1.7vw, 19px);
+  color: var(--text-2);
+  max-width: 680px;
+  margin: 0 auto 36px;
+  line-height: 1.65;
+}
+.hero-ctas {
+  display: flex; gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hero-trust {
+  margin-top: 36px;
+  display: flex; align-items: center; gap: 22px;
+  justify-content: center;
+  flex-wrap: wrap;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.hero-trust .anth {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.hero-trust .anth-mark {
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #d97757, #c0612b);
+  display: grid; place-items: center;
+  color: white; font-size: 11px; font-weight: 700;
+}
+
+/* product preview */
+.preview {
+  max-width: 1180px;
+  margin: -40px auto 0;
+  padding: 0 32px;
+  position: relative; z-index: 2;
+}
+.preview-frame {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+}
+.preview-bar {
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  padding: 11px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  direction: ltr;
+}
+.preview-dots { display: flex; gap: 6px; }
+.preview-dots span { width: 11px; height: 11px; border-radius: 50%; }
+.preview-dots span:nth-child(1) { background: #fb7185; }
+.preview-dots span:nth-child(2) { background: #fbbf24; }
+.preview-dots span:nth-child(3) { background: #4ade80; }
+.preview-url {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  font-family: 'JetBrains Mono', monospace;
+}
+.preview-body {
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
+  height: 480px;
+  background: var(--bg);
+}
+@media (max-width: 1000px) { .preview-body { grid-template-columns: 200px 1fr; } .preview-right { display: none; } }
+@media (max-width: 720px) { .preview-body { grid-template-columns: 1fr; } .preview-left { display: none; } }
+
+.preview-left {
+  background: var(--bg-2);
+  border-inline-end: 1px solid var(--border);
+  padding: 14px 10px;
+  overflow-y: auto;
+}
+.preview-section {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-3);
+  padding: 8px 10px 6px;
+  letter-spacing: 0.5px;
+}
+.preview-room {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  cursor: pointer;
+}
+.preview-room:hover { background: var(--bg-3); }
+.preview-room.active {
+  background: var(--bg);
+  border: 1px solid var(--indigo-line);
+  box-shadow: 0 1px 2px rgba(79,70,229,0.06);
+}
+.preview-room-info { flex: 1; min-width: 0; }
+.preview-room-name {
+  font-size: 12.5px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preview-room-meta {
+  font-size: 11px; color: var(--text-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preview-room.active .preview-room-name { color: var(--indigo); }
+
+.preview-center {
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.preview-center-head {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.preview-center-title { font-size: 14px; font-weight: 700; }
+.preview-center-sub { font-size: 11.5px; color: var(--text-3); }
+.preview-center-body {
+  flex: 1; overflow-y: auto;
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--bg-2);
+}
+.preview-msg { display: flex; gap: 10px; }
+.preview-msg-body { flex: 1; min-width: 0; }
+.preview-msg-head { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
+.preview-msg-name { font-weight: 600; }
+.preview-msg-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  background: var(--indigo-soft);
+  color: var(--indigo);
+  border-radius: 3px;
+  font-weight: 700;
+}
+.preview-msg-time { color: var(--text-3); font-size: 10.5px; margin-inline-start: auto; }
+.preview-msg-bubble {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+  margin-top: 3px;
+}
+.preview-msg.ai .preview-msg-bubble {
+  background: var(--indigo-soft);
+  border: 1px solid var(--indigo-line);
+  position: relative;
+}
+.preview-msg.ai .preview-msg-bubble::before {
+  content: ''; position: absolute; top: 0; inset-inline-start: 0; bottom: 0;
+  width: 3px; border-radius: 2px;
+  background: linear-gradient(180deg, #4f46e5, #7c3aed);
+}
+.preview-msg.ai .preview-msg-bubble strong { color: var(--indigo); }
+.preview-input-row {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: center;
+  background: var(--bg);
+}
+.preview-input-field {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.preview-input-btn {
+  width: 30px; height: 30px;
+  background: var(--indigo);
+  color: white;
+  border-radius: 8px;
+  display: grid; place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.preview-right {
+  background: var(--bg-2);
+  border-inline-start: 1px solid var(--border);
+  padding: 14px 14px;
+  overflow-y: auto;
+}
+.preview-ai-card {
+  background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+  border: 1px solid var(--indigo-line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.preview-ai-card h4 {
+  font-size: 12.5px; font-weight: 700;
+  color: var(--indigo);
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 7px;
+}
+.preview-ai-card p { font-size: 11.5px; color: var(--text-2); line-height: 1.6; }
+
+.preview-section-2 {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-3);
+  margin: 10px 0 8px;
+  letter-spacing: 0.5px;
+}
+.preview-mini {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.preview-mini:hover { background: var(--bg-3); }
+.preview-mini-name { color: var(--text-2); font-weight: 500; }
+
+/* trust strip */
+.trust {
+  padding: 36px 32px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.trust-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  gap: 36px; flex-wrap: wrap;
+}
+.trust-label {
+  font-size: 12.5px; color: var(--text-3);
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+.trust-logos {
+  display: flex; align-items: center; gap: 36px;
+  flex-wrap: wrap;
+}
+.trust-logo {
+  font-size: 18px; font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: -0.5px;
+  opacity: 0.7;
+}
+
+/* stats band */
+.stats {
+  background: var(--bg-2);
+  padding: 60px 32px;
+}
+.stats-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+}
+@media (max-width: 800px) { .stats-inner { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .stats-inner { grid-template-columns: 1fr; } }
+.stat {
+  text-align: center;
+}
+.stat-num {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.stat-num .gradient {
+  background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+.stat-label {
+  font-size: 13.5px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* sections */
+.section {
+  padding: 90px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.section-head { text-align: center; margin-bottom: 56px; }
+.section-eyebrow {
+  display: inline-block;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--indigo);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
+}
+.section h2 {
+  font-size: clamp(32px, 4.5vw, 48px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1.2px;
+  color: var(--text);
+  margin-bottom: 14px;
+  max-width: 760px;
+  margin-inline: auto;
+}
+.section .lede {
+  font-size: 16.5px;
+  color: var(--text-2);
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+/* features grid */
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+@media (max-width: 900px) { .features { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+.feature {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  transition: all 0.2s;
+}
+.feature:hover {
+  border-color: var(--border-2);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+.feature-icon {
+  width: 44px; height: 44px;
+  border-radius: 11px;
+  background: var(--indigo-soft);
+  border: 1px solid var(--indigo-line);
+  display: grid; place-items: center;
+  font-size: 20px;
+  margin-bottom: 18px;
+}
+.feature h3 {
+  font-size: 17.5px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+.feature p {
+  font-size: 14px; color: var(--text-2);
+  line-height: 1.7;
+}
+
+/* how it works */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  position: relative;
+}
+@media (max-width: 800px) { .steps { grid-template-columns: 1fr; gap: 18px; } }
+.step {
+  text-align: center;
+  padding: 12px;
+}
+.step-num {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  display: grid; place-items: center;
+  color: white;
+  font-size: 19px; font-weight: 800;
+  margin: 0 auto 18px;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+}
+.step h3 {
+  font-size: 18px; font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+.step p {
+  font-size: 14px; color: var(--text-2);
+  line-height: 1.7;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+/* TG comparison */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+@media (max-width: 800px) { .compare-grid { grid-template-columns: 1fr; } }
+.compare-card {
+  border-radius: 18px;
+  padding: 32px;
+  position: relative;
+}
+.compare-card.bad {
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+}
+.compare-card.good {
+  background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+  border: 1px solid var(--indigo-line);
+}
+.compare-tag {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  margin-bottom: 16px;
+}
+.compare-card.bad .compare-tag {
+  background: #fee2e2; color: #b91c1c;
+}
+.compare-card.good .compare-tag {
+  background: white; color: var(--indigo);
+  border: 1px solid var(--indigo-line);
+}
+.compare-card h3 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 16px;
+}
+.compare-card.bad h3 { color: #374151; }
+.compare-card.good h3 { color: var(--indigo); }
+.compare-list {
+  list-style: none;
+  display: flex; flex-direction: column;
+  gap: 12px;
+}
+.compare-list li {
+  font-size: 14.5px;
+  line-height: 1.6;
+  padding-inline-start: 28px;
+  position: relative;
+  color: var(--text);
+}
+.compare-card.bad .compare-list li::before {
+  content: '✕';
+  position: absolute; inset-inline-start: 0; top: 0;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+}
+.compare-card.good .compare-list li::before {
+  content: '✓';
+  position: absolute; inset-inline-start: 0; top: 0;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--indigo);
+  color: white;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+}
+
+/* anthropic band */
+.anthro {
+  background: var(--text);
+  color: white;
+  padding: 80px 32px;
+}
+.anthro-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: center;
+}
+@media (max-width: 900px) { .anthro-inner { grid-template-columns: 1fr; gap: 36px; } }
+.anthro-left h2 {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin-bottom: 18px;
+}
+.anthro-left h2 em { color: #fbbf24; font-style: normal; }
+.anthro-left p {
+  font-size: 16px;
+  color: #cbd5e1;
+  line-height: 1.65;
+  margin-bottom: 22px;
+}
+.anthro-left p strong { color: white; }
+.anthro-logos {
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 10px 22px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  margin-bottom: 22px;
+}
+.anthro-logos .ll {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 14px; font-weight: 700;
+}
+.anthro-logos .ll .lm {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 800; color: white;
+}
+.anthro-logos .ll.s .lm { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+.anthro-logos .ll.a .lm { background: linear-gradient(135deg, #d97757, #c0612b); }
+.anthro-logos .x { color: #64748b; }
+
+.anthro-right {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 28px;
+}
+.anthro-right h4 {
+  font-size: 14px; font-weight: 700;
+  color: white;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.anthro-right h4 .b {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #d97757, #c0612b);
+  display: grid; place-items: center;
+  color: white; font-size: 13px; font-weight: 700;
+}
+.anthro-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.anthro-list li {
+  font-size: 13.5px;
+  color: #e2e8f0;
+  padding-inline-start: 22px;
+  position: relative;
+  line-height: 1.6;
+}
+.anthro-list li::before {
+  content: '✓';
+  position: absolute; inset-inline-start: 0;
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+/* CTA */
+.cta-band {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  padding: 90px 32px;
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cta-band::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.15), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1), transparent 40%);
+}
+.cta-inner { position: relative; max-width: 720px; margin: 0 auto; }
+.cta-band h2 {
+  font-size: clamp(30px, 4.5vw, 46px);
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+.cta-band p {
+  font-size: 17px;
+  color: rgba(255,255,255,0.88);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+.cta-band .btn-primary {
+  background: white;
+  color: var(--indigo);
+  font-weight: 700;
+}
+.cta-band .btn-primary:hover { background: #f1f5f9; }
+.cta-band .btn-secondary {
+  background: transparent;
+  color: white;
+  border-color: rgba(255,255,255,0.4);
+}
+.cta-band .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: white; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-left">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">M</div>
+        <span class="logo-text">Maven<span class="ai">.ai</span></span>
+      </a>
+      <div class="nav-right" style="display:none;">
+        <button class="nav-link active">המוצר</button>
+        <button class="nav-link">תמחור</button>
+        <button class="nav-link">לקוחות</button>
+        <button class="nav-link">חברה</button>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a href="login.html" class="nav-link">התחבר</a>
+      <a href="login.html?signup=1" class="btn btn-primary btn-sm">התחל עכשיו</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow"><span class="dot"></span>מוצר ישראלי · בנוי על Anthropic Claude</div>
+      <h1>הצ'אט שמהפך<br>כל קהילה <span class="accent">לנכס חכם.</span></h1>
+      <p class="hero-sub">Maven היא הדרך הראשונה למורה, מומחה, או יוצר תוכן להפוך את הקשר שלו עם ה-AI למוצר שאפשר למכור. הקהילה שלך מקבלת בינה שמכירה אותך — לא Claude גנרי.</p>
+      <div class="hero-ctas">
+        <a href="login.html?signup=1" class="btn btn-primary btn-lg">פתח קהילה — חינם</a>
+        <a href="chat.html" class="btn btn-secondary btn-lg">ראה את האפליקציה ←</a>
+      </div>
+      <div class="hero-trust">
+        <span class="anth">
+          <span class="anth-mark">A</span>
+          בשיתוף Anthropic
+        </span>
+        <span>·</span>
+        <span>בנוי על Claude</span>
+        <span>·</span>
+        <span>מתחיל בישראל</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCT PREVIEW -->
+  <section class="preview">
+    <div class="preview-frame">
+      <div class="preview-bar">
+        <div class="preview-dots"><span></span><span></span><span></span></div>
+        <div class="preview-url">maven.app / digital-advertising-mastery</div>
+        <div style="width:50px;"></div>
+      </div>
+      <div class="preview-body">
+        <aside class="preview-left">
+          <div class="preview-section">הקהילות שלי</div>
+          <div class="preview-room active">
+            <div class="avatar sm c-indigo">פד</div>
+            <div class="preview-room-info">
+              <div class="preview-room-name">פרסום דיגיטלי</div>
+              <div class="preview-room-meta">חגי · 3 הודעות חדשות</div>
+            </div>
+          </div>
+          <div class="preview-room">
+            <div class="avatar sm c-rose">קר</div>
+            <div class="preview-room-info">
+              <div class="preview-room-name">קופירייטינג מתקדם</div>
+              <div class="preview-room-meta">שיר · פעיל לפני 2ש'</div>
+            </div>
+          </div>
+          <div class="preview-room">
+            <div class="avatar sm c-emerald">SE</div>
+            <div class="preview-room-info">
+              <div class="preview-room-name">SEO לבעלי עסקים</div>
+              <div class="preview-room-meta">דניאל · 12 חדשות</div>
+            </div>
+          </div>
+        </aside>
+
+        <section class="preview-center">
+          <div class="preview-center-head">
+            <div class="preview-center-title"># פרסום-דיגיטלי</div>
+            <div class="preview-center-sub">חגי דרדיק · 47 חברים · AI פעיל</div>
+          </div>
+          <div class="preview-center-body">
+            <div class="preview-msg">
+              <div class="avatar sm c-indigo">חד</div>
+              <div class="preview-msg-body">
+                <div class="preview-msg-head">
+                  <span class="preview-msg-name">חגי</span>
+                  <span class="preview-msg-tag">מורה</span>
+                  <span class="preview-msg-time">9:23</span>
+                </div>
+                <div class="preview-msg-bubble">200 ש"ח ביום לקריאייטיב, מינימום 48 שעות. הורגים מתחת ל-1.2% CTR.</div>
+              </div>
+            </div>
+            <div class="preview-msg">
+              <div class="avatar sm c-pink">מכ</div>
+              <div class="preview-msg-body">
+                <div class="preview-msg-head">
+                  <span class="preview-msg-name">מאיה</span>
+                  <span class="preview-msg-time">14:11</span>
+                </div>
+                <div class="preview-msg-bubble">חגי, איפה היה הדיון על Audience Network?</div>
+              </div>
+            </div>
+            <div class="preview-msg ai">
+              <div class="avatar sm c-ai">AI</div>
+              <div class="preview-msg-body">
+                <div class="preview-msg-head">
+                  <span class="preview-msg-name" style="color:var(--indigo);">Maven AI</span>
+                  <span class="preview-msg-tag">מבוסס על חגי</span>
+                  <span class="preview-msg-time">14:11</span>
+                </div>
+                <div class="preview-msg-bubble">
+                  <strong>חגי אמר ב-8 במאי:</strong> Audience Network כבוי כברירת מחדל להצעות כושר/ניסיון. ה-CPM נראה זול אבל ה-CAC פי 3 גבוה.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="preview-input-row">
+            <div class="preview-input-field">הקלד הודעה…</div>
+            <button class="preview-input-btn">↑</button>
+          </div>
+        </section>
+
+        <aside class="preview-right">
+          <div class="preview-ai-card">
+            <h4><span>✨</span> סיכום השבוע</h4>
+            <p>חגי כיסה: בדיקות קריאייטיב, Audience Network, hooks ל-3 שניות. 14 שאלות פתוחות מהקהילה.</p>
+          </div>
+          <div class="preview-section-2">חברים פעילים</div>
+          <div class="preview-mini">
+            <div class="avatar xs c-indigo">חד</div>
+            <span class="preview-mini-name">חגי דרדיק</span>
+            <span class="pill pill-indigo" style="margin-inline-start:auto;">מורה</span>
+          </div>
+          <div class="preview-mini">
+            <div class="avatar xs c-pink">מכ</div>
+            <span class="preview-mini-name">מאיה כהן</span>
+          </div>
+          <div class="preview-mini">
+            <div class="avatar xs c-emerald">שא</div>
+            <span class="preview-mini-name">שיר אדלר</span>
+          </div>
+          <div class="preview-mini">
+            <div class="avatar xs c-amber">עג</div>
+            <span class="preview-mini-name">עומר ג׳קלין</span>
+          </div>
+          <div class="preview-mini">
+            <div class="avatar xs c-sky">דב</div>
+            <span class="preview-mini-name">דניאל בן-זאב</span>
+          </div>
+          <div class="preview-section-2">פעולות מהירות</div>
+          <div class="preview-mini"><span>📊</span><span class="preview-mini-name">דוח שבועי</span></div>
+          <div class="preview-mini"><span>📥</span><span class="preview-mini-name">חבר Claude שלי</span></div>
+          <div class="preview-mini"><span>🔗</span><span class="preview-mini-name">קוד הזמנה</span></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section class="trust" style="margin-top: 80px;">
+    <div class="trust-inner">
+      <div class="trust-label">מאמינים בנו:</div>
+      <div class="trust-logos">
+        <div class="trust-logo">Anthropic</div>
+        <div class="trust-logo">Claude</div>
+        <div class="trust-logo">Tel Aviv University</div>
+        <div class="trust-logo">Reichman</div>
+        <div class="trust-logo">8200 Alumni</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stats-inner">
+      <div class="stat">
+        <div class="stat-num"><span class="gradient">×10</span></div>
+        <div class="stat-label">הזמן של המורה</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><span class="gradient">24/7</span></div>
+        <div class="stat-label">זמינות AI לקהילה</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><span class="gradient">0%</span></div>
+        <div class="stat-label">תשובות גנריות</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><span class="gradient">∞</span></div>
+        <div class="stat-label">זיכרון של הצ'אט</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">היכולות</div>
+      <h2>הכל מה שצריך כדי להפעיל קהילה חכמה.</h2>
+      <p class="lede">לא צ'אט עם תוסף AI. אלא בינה שמובנית בתוך הקהילה — מבוססת עליך, זוכרת הכל, יודעת איך לדבר עם החברים שלך.</p>
+    </div>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🧠</div>
+        <h3>AI מבוסס עליך, לא על האינטרנט</h3>
+        <p>חבר את חשבון Claude האישי שלך. ה-AI של הקהילה יורש את הסגנון, ה-frameworks, וההיסטוריה שלך. הסטודנטים שלך לא מקבלים תשובות גנריות.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💬</div>
+        <h3>צ'אט קהילתי מתקדם</h3>
+        <p>חוויית טלגרם בעיצוב חדש לגמרי — אבל עם AI שקרא כל הודעה אי-פעם בקהילה. שאל "איפה דיברו על X" וקבל את ההודעה המדויקת.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">✨</div>
+        <h3>שתי דרכים לשאול AI</h3>
+        <p>בקבוצה — התשובה לכל הקהילה. בפרטי — שיחה 1:1 בשעת לילה. שני המצבים מבוססים על אותה ידע של החדר.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📚</div>
+        <h3>ארגון אוטומטי של ידע</h3>
+        <p>בלחיצה אחת ה-AI קורא את כל הצ'אט ומפיק סיכום מובנה: נושאים, frameworks, שאלות פתוחות, חורי ידע.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔗</div>
+        <h3>הזמנות בקוד פשוט</h3>
+        <p>שתף קוד 6 ספרות, התלמידים נכנסים בשנייה. בלי תהליכי onboarding, בלי טופסי הרשמה ארוכים.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>תובנות על מה הקהילה שואלת</h3>
+        <p>תראה מה מסקרן את הקהילה, איפה יש חוסר ידע, ועל מה כדאי לדבר במפגש הבא. הקהילה הופכת לזרז התוכן שלך.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" style="background:var(--bg-2);max-width:none;">
+    <div style="max-width: 1100px; margin: 0 auto;">
+      <div class="section-head">
+        <div class="section-eyebrow">איך זה עובד</div>
+        <h2>שלוש דקות. שלושה צעדים.</h2>
+        <p class="lede">פותחים חשבון, מחברים את Claude, ומזמינים את הקהילה. זהו. ה-AI עושה את כל השאר.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>פתח את הקהילה שלך</h3>
+          <p>הירשם כמורה, תן שם לקהילה, קבל קוד הזמנה. 30 שניות.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>חבר את Claude</h3>
+          <p>חבר את חשבון Claude שלך. ה-AI לומד את הסגנון, ה-frameworks, וההיסטוריה שלך עם ה-AI.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>הזמן את הקהילה</h3>
+          <p>שלח את קוד ההזמנה, הם נכנסים. ה-AI כבר מוכן לענות בקול שלך 24/7.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TG VS MAVEN -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">למה לא להישאר בטלגרם</div>
+      <h2>אותה חוויה שאתה אוהב. רק חכמה.</h2>
+      <p class="lede">בטלגרם הקהילה היא רעש. ב-Maven, היא נכס שצובר ערך בכל יום.</p>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card bad">
+        <span class="compare-tag">טלגרם / דיסקורד</span>
+        <h3>קהילה גדולה, בלי ידע</h3>
+        <ul class="compare-list">
+          <li>200 הודעות ביום, אי אפשר לעקוב</li>
+          <li>חיפוש לוקח 20 דקות, רוב הזמן לא מוצאים</li>
+          <li>המורה משיב לשאלה אחת מתוך עשר</li>
+          <li>אותה שאלה נשאלת 50 פעם</li>
+          <li>אין סיכומים, אין מבנה, רק טקסט</li>
+        </ul>
+      </div>
+      <div class="compare-card good">
+        <span class="compare-tag">Maven</span>
+        <h3>קהילה חכמה שזוכרת</h3>
+        <ul class="compare-list">
+          <li>AI שקרא כל הודעה אי-פעם בקהילה</li>
+          <li>שאל "איפה דיברו על X" — תקבל ציטוט מדויק</li>
+          <li>המורה משיב פעם אחת, ה-AI חוזר על זה לכולם</li>
+          <li>שאלות חדשות מקבלות תשובה בקול של המורה</li>
+          <li>סיכומים אוטומטיים, מבנה תמיד נוכח</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANTHROPIC -->
+  <section class="anthro">
+    <div class="anthro-inner">
+      <div class="anthro-left">
+        <div class="anthro-logos">
+          <div class="ll s"><div class="lm">M</div>Maven</div>
+          <span class="x">×</span>
+          <div class="ll a"><div class="lm">A</div>Anthropic</div>
+        </div>
+        <h2>זה לא Claude. זה ה-Claude <em>שלך.</em></h2>
+        <p>Maven בנויה על Claude מבית <strong>Anthropic</strong> — המודל המוביל בעולם להבנת שפה והוראות. אנחנו לא רק משתמשים ב-Claude — אנחנו <strong>הופכים את הקשר שלך עם Claude למוצר</strong>. אתה מחבר את החשבון. ה-AI של הקהילה יורש הכל.</p>
+      </div>
+      <div class="anthro-right">
+        <h4><span class="b">A</span>למה Claude הוא הבסיס</h4>
+        <ul class="anthro-list">
+          <li>הקשר הטוב ביותר בשוק (חולץ מסמכים שלמים בקלות)</li>
+          <li>דיוק גבוה — כמעט בלי הזיות</li>
+          <li>מצטיין בעברית, לא רק באנגלית</li>
+          <li>מבוסס על Constitutional AI — אבטחה ושקיפות</li>
+          <li>חשבון Claude Pro/Max שלך עובד ישירות עם Maven</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band">
+    <div class="cta-inner">
+      <h2>היה אחד היוצרים הראשונים בישראל שמוכרים את ה-AI שלהם.</h2>
+      <p>בנית את הקשר עם ה-AI. הגיע הזמן להפוך אותו לעסק. הקהילה הראשונה שלך, חכמה, בבעלותך, על Maven.</p>
+      <div class="hero-ctas">
+        <a href="login.html?signup=1" class="btn btn-primary btn-lg">פתח את הקהילה הראשונה</a>
+        <a href="chat.html" class="btn btn-secondary btn-lg">ראה איך זה עובד</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="row gap-10">
+        <a href="index.html" class="logo">
+          <div class="logo-mark" style="width:26px;height:26px;font-size:12px;">M</div>
+          <span class="logo-text" style="font-size:15px;">Maven<span class="ai">.ai</span></span>
+        </a>
+        <span style="margin-inline-start:14px;">© 2026</span>
+        <span>·</span>
+        <span>בנוי בישראל</span>
+      </div>
+      <div class="row gap-14">
+        <a href="ROADMAP.md">מפת דרכים</a>
+        <a href="README.md">תיעוד</a>
+        <a href="PITCH.md">משקיעים</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>

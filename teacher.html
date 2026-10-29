@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Synapse — Teacher dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="synapse.css" />
+<style>
+  body { overflow: hidden; }
+
+  /* at-risk row */
+  .risk-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 11px;
+    background: rgba(15,17,35,0.5);
+    border: 1px solid var(--border-soft);
+  }
+  .risk-row + .risk-row { margin-top: 8px; }
+  .risk-row.high { border-color: rgba(239,68,68,0.35); background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(15,17,35,0.5)); }
+  .risk-row.med { border-color: rgba(245,158,11,0.3); background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(15,17,35,0.5)); }
+  .risk-info { display: flex; flex-direction: column; gap: 3px; }
+  .risk-name { font-size: 13.5px; font-weight: 600; }
+  .risk-reason { font-size: 12px; color: #d6dbe8; line-height: 1.45; }
+  .risk-reason strong { color: #c4b5fd; }
+
+  /* class card */
+  .class-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  .class-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139,92,246,0.4);
+  }
+  .class-card .ccolor {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  .class-card h4 { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
+  .class-card .meta { font-size: 11.5px; color: var(--text-faint); }
+  .class-card .stats { display: flex; gap: 14px; font-size: 11px; color: var(--text-dim); margin-top: 12px; }
+  .class-card .stats span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* lesson planner */
+  .lesson-step {
+    display: flex; gap: 12px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: rgba(15,17,35,0.4);
+    border: 1px solid var(--border-soft);
+  }
+  .lesson-step + .lesson-step { margin-top: 6px; }
+  .lesson-num {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    color: white; font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .lesson-step .ls-time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-faint); }
+  .lesson-step .ls-title { font-size: 13px; font-weight: 500; }
+  .lesson-step .ls-sub { font-size: 11.5px; color: var(--text-dim); }
+
+  /* questions queue */
+  .question {
+    padding: 13px 14px;
+    border-radius: 11px;
+    background: rgba(15,17,35,0.5);
+    border: 1px solid var(--border-soft);
+  }
+  .question + .question { margin-top: 8px; }
+  .question .q-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .question .q-name { font-size: 12.5px; font-weight: 600; }
+  .question .q-class { font-size: 10.5px; color: var(--text-faint); }
+  .question .q-text { font-size: 13px; color: #d6dbe8; line-height: 1.5; }
+  .question .q-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+  /* AI compose */
+  .compose {
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));
+    border: 1px dashed rgba(139,92,246,0.35);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .compose-row {
+    display: flex; gap: 8px;
+    background: rgba(8,9,22,0.4);
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    padding: 6px 6px 6px 12px;
+    align-items: center;
+  }
+  .compose-row input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: white; font-size: 13px; font-family: inherit; padding: 7px 0;
+  }
+  .compose-suggestions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .suggestion {
+    font-size: 11px;
+    padding: 5px 10px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 999px;
+    color: #c4b5fd;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .suggestion:hover { background: rgba(139,92,246,0.18); color: white; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <nav class="nav">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">S</div>
+      <div><span class="logo-text">Synapse</span><span class="tag">TEACHER</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="student.html" class="nav-link">Student</a>
+      <a href="teacher.html" class="nav-link active">Teacher</a>
+      <a href="admin.html" class="nav-link">Admin</a>
+      <a href="index.html" class="nav-link">← Overview</a>
+    </div>
+  </nav>
+
+  <div class="dash">
+
+    <!-- SIDEBAR -->
+    <aside class="dash-sidebar">
+      <button class="dash-link active" data-page="home"><span class="ico">🏠</span>Today</button>
+      <button class="dash-link" data-page="classes"><span class="ico">📚</span>My classes <span class="count">4</span></button>
+      <button class="dash-link" data-page="roster"><span class="ico">👥</span>Roster <span class="count">112</span></button>
+      <button class="dash-link" data-page="assignments"><span class="ico">📝</span>Assignments</button>
+      <button class="dash-link" data-page="gradebook"><span class="ico">📊</span>Gradebook</button>
+      <button class="dash-link" data-page="lessons"><span class="ico">📖</span>Lesson plans</button>
+      <button class="dash-link" data-page="ai"><span class="ico">✨</span>AI co-teacher</button>
+
+      <div class="dash-section">Care</div>
+      <button class="dash-link" data-page="risk"><span class="ico">🚨</span>At-risk <span class="count">3</span></button>
+      <button class="dash-link" data-page="office"><span class="ico">🎤</span>Office hours</button>
+      <button class="dash-link" data-page="parents"><span class="ico">👨‍👩‍👧</span>Parent messages</button>
+
+      <div class="dash-section">Admin</div>
+      <button class="dash-link" data-page="attendance"><span class="ico">✅</span>Attendance</button>
+      <button class="dash-link" data-page="calendar"><span class="ico">📅</span>Calendar</button>
+      <button class="dash-link" data-page="library"><span class="ico">📂</span>Library</button>
+
+      <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-soft);">
+        <div class="dash-link" style="cursor:default;">
+          <div class="avatar md c-violet">RC</div>
+          <div style="line-height:1.2;">
+            <div style="font-size:12.5px;font-weight:500;">Robert Chen</div>
+            <div style="font-size:10.5px;color:var(--text-faint);">Math · 8 yrs</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="dash-main">
+
+      <div class="page-head">
+        <div>
+          <h1>Monday morning, Robert 👋</h1>
+          <div class="sub">3 classes today · 1 student needs immediate attention · 8 essays awaiting your read</div>
+        </div>
+        <div class="row gap-10">
+          <button class="btn btn-ghost btn-sm">⌘K Search</button>
+          <button class="btn btn-primary btn-sm">+ New lesson</button>
+        </div>
+      </div>
+
+      <!-- AI BRIEF -->
+      <div class="ai-block">
+        <h4><span class="ai-mark">AI</span>Your morning brief</h4>
+        <p><strong>Big thing:</strong> Maya K. (9th grade Calc II) hasn't submitted the last 2 assignments and her quiz scores dropped from 91% to 67%. I have her chat logs — she's been asking about chain-rule integration repeatedly without it landing. <strong>Suggested:</strong> 15-min office hours focused on chain-rule today.</p>
+        <p style="margin-top: 10px;"><strong>Smaller things:</strong> 8 essays from European History students (auto-graded drafts ready for your sign-off, average 84%) · 3 students asked about Friday's quiz scope · Curriculum council meeting moved to Thursday.</p>
+        <div class="row gap-8 mt-16">
+          <button class="btn btn-primary btn-sm">📧 Message Maya to book office hours</button>
+          <button class="btn btn-ghost btn-sm">Review essay drafts →</button>
+          <button class="btn btn-ghost btn-sm">Read full brief</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="grid grid-4">
+        <div class="stat-tile">
+          <div class="stat-num">112</div>
+          <div class="stat-label">Active students</div>
+          <div class="stat-trend">↑ 4 this term</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num">8</div>
+          <div class="stat-label">Awaiting grading</div>
+          <div class="stat-trend">AI pre-graded 6</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num">3</div>
+          <div class="stat-label">At-risk students</div>
+          <div class="stat-trend down">2 new this week</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num">94%</div>
+          <div class="stat-label">Class avg attendance</div>
+          <div class="stat-trend">↑ 2% vs last month</div>
+        </div>
+      </div>
+
+      <!-- TWO COL: at-risk + today's lessons -->
+      <div class="grid grid-2">
+
+        <!-- AT RISK -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ico">🚨</span>At-risk students (AI flagged)</div>
+            <span class="card-tag red">3 alerts</span>
+          </div>
+          <div class="risk-row high">
+            <div class="avatar lg c-cyan">MK</div>
+            <div class="risk-info">
+              <div class="risk-name">Maya Klein · 9th · Calc II</div>
+              <div class="risk-reason">Quiz scores <strong>91% → 67%</strong> over 2 weeks. Asking about chain-rule repeatedly in AI tutor (14 sessions). Missed last 2 submissions.</div>
+            </div>
+            <span class="pill red"><span class="dot"></span>High</span>
+            <button class="btn btn-ghost btn-sm">Open</button>
+          </div>
+          <div class="risk-row med">
+            <div class="avatar lg c-amber">JT</div>
+            <div class="risk-info">
+              <div class="risk-name">Jordan Torres · 9th · Calc II</div>
+              <div class="risk-reason">Engagement dropped <strong>40%</strong> this week (chat messages, AI tutor sessions). Attendance fine. Possibly disengaged, not struggling.</div>
+            </div>
+            <span class="pill amber"><span class="dot"></span>Medium</span>
+            <button class="btn btn-ghost btn-sm">Open</button>
+          </div>
+          <div class="risk-row med">
+            <div class="avatar lg c-green">SL</div>
+            <div class="risk-info">
+              <div class="risk-name">Sam Lee · 9th · Calc II</div>
+              <div class="risk-reason">Practice problem accuracy <strong>below class avg</strong> for 14 days. Has not used AI tutor at all — possibly avoiding asking for help.</div>
+            </div>
+            <span class="pill amber"><span class="dot"></span>Medium</span>
+            <button class="btn btn-ghost btn-sm">Open</button>
+          </div>
+        </div>
+
+        <!-- TODAY'S LESSONS -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ico">📖</span>Today's lessons</div>
+            <span class="faint tiny">Mon May 12</span>
+          </div>
+          <div class="lesson-step">
+            <div class="lesson-num">1</div>
+            <div style="flex:1;">
+              <div class="ls-time">08:30 – 09:25</div>
+              <div class="ls-title">Calc II · Integration by parts (LIATE rule)</div>
+              <div class="ls-sub">Examples 1, 4, 7 from worksheet · Practice problems 12–18 · End w/ exit ticket</div>
+            </div>
+            <span class="pill violet">Ready</span>
+          </div>
+          <div class="lesson-step">
+            <div class="lesson-num">2</div>
+            <div style="flex:1;">
+              <div class="ls-time">10:00 – 10:55</div>
+              <div class="ls-title">Calc III · Multivariable basics</div>
+              <div class="ls-sub">Partial derivatives intro · AI-suggested warmup: scalar fields visualization</div>
+            </div>
+            <span class="pill violet">Ready</span>
+          </div>
+          <div class="lesson-step">
+            <div class="lesson-num">3</div>
+            <div style="flex:1;">
+              <div class="ls-time">13:15 – 14:10</div>
+              <div class="ls-title">AP Calc · Mock exam review</div>
+              <div class="ls-sub">Cover sections from last week's diagnostic (avg score 71%)</div>
+            </div>
+            <span class="pill amber">Draft</span>
+          </div>
+          <div class="row gap-8 mt-16">
+            <button class="btn btn-ghost btn-sm">✨ AI: draft 3rd-period lesson</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY CLASSES -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="ico">📚</span>My classes</div>
+          <button class="btn btn-ghost btn-sm">+ Create new class</button>
+        </div>
+        <div class="grid grid-4">
+          <button class="class-card">
+            <div class="ccolor c-violet">🧮</div>
+            <h4>Calculus II · 9th</h4>
+            <div class="meta">28 students · MWF 8:30</div>
+            <div class="stats">
+              <span>👥 28</span><span>📝 4 due</span><span class="pill red" style="font-size:10px;padding:1px 6px;">1 risk</span>
+            </div>
+          </button>
+          <button class="class-card">
+            <div class="ccolor c-cyan">📐</div>
+            <h4>Calculus III · 11th</h4>
+            <div class="meta">22 students · TR 10:00</div>
+            <div class="stats">
+              <span>👥 22</span><span>📝 2 due</span>
+            </div>
+          </button>
+          <button class="class-card">
+            <div class="ccolor c-pink">🎯</div>
+            <h4>AP Calc · 12th</h4>
+            <div class="meta">31 students · MWF 13:15</div>
+            <div class="stats">
+              <span>👥 31</span><span>📝 7 due</span>
+            </div>
+          </button>
+          <button class="class-card">
+            <div class="ccolor c-amber">🎲</div>
+            <h4>Stats · 11th</h4>
+            <div class="meta">31 students · TR 13:15</div>
+            <div class="stats">
+              <span>👥 31</span><span>📝 3 due</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI CO-TEACHER + QUESTIONS QUEUE -->
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ico">✨</span>AI co-teacher</div>
+            <span class="card-tag">grounded in your work</span>
+          </div>
+          <p class="dim" style="font-size: 13px; line-height: 1.55; margin-bottom: 14px;">
+            Your AI co-teacher knows every lesson you've taught, every chat in every class, and every student's history. Ask it to draft, grade, or just think out loud.
+          </p>
+          <div class="compose">
+            <div class="compose-row">
+              <input type="text" id="composeInput" placeholder="Ask your co-teacher anything…" />
+              <button class="send-btn" id="composeSend">↑</button>
+            </div>
+            <div class="compose-suggestions">
+              <button class="suggestion">Draft tomorrow's Calc II lesson on improper integrals</button>
+              <button class="suggestion">Grade the open-ended essay responses</button>
+              <button class="suggestion">Write a parent update for Maya's mom</button>
+              <button class="suggestion">Generate 5 practice problems on chain rule</button>
+              <button class="suggestion">Summarize this week's Calc II discussions</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ico">💬</span>Questions queue</div>
+            <span class="faint tiny">Today · 11 from students</span>
+          </div>
+          <div class="question">
+            <div class="q-head">
+              <div class="avatar sm c-cyan">MK</div>
+              <span class="q-name">Maya K.</span>
+              <span class="q-class">· Calc II · 7m ago</span>
+            </div>
+            <div class="q-text">Mr. Chen, can we go over the chain rule one more time? I keep getting stuck when there's an exponent inside.</div>
+            <div class="q-actions">
+              <button class="btn btn-primary btn-sm">Reply</button>
+              <button class="btn btn-ghost btn-sm">✨ AI draft</button>
+              <button class="btn btn-ghost btn-sm">📅 Book office hours</button>
+            </div>
+          </div>
+          <div class="question">
+            <div class="q-head">
+              <div class="avatar sm c-pink">PD</div>
+              <span class="q-name">Priya D.</span>
+              <span class="q-class">· AP Calc · 22m ago</span>
+            </div>
+            <div class="q-text">What's the scope of Friday's quiz? Is u-substitution on it?</div>
+            <div class="q-actions">
+              <button class="btn btn-primary btn-sm">Reply</button>
+              <button class="btn btn-ghost btn-sm">✨ AI auto-answer (high confidence)</button>
+            </div>
+          </div>
+          <div class="question">
+            <div class="q-head">
+              <div class="avatar sm c-blue">JR</div>
+              <span class="q-name">Jordan R.</span>
+              <span class="q-class">· Calc II · 1h ago</span>
+            </div>
+            <div class="q-text">I missed Friday — what did we cover and where can I catch up?</div>
+            <div class="q-actions">
+              <button class="btn btn-primary btn-sm">Reply</button>
+              <button class="btn btn-ghost btn-sm">✨ AI generated catch-up plan ready →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE SESSION + ATTENDANCE -->
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ico">🎥</span>Next live session</div>
+            <span class="card-tag green"><span class="dot"></span>in 12 min</span>
+          </div>
+          <div class="mb-10">
+            <div style="font-size: 15px; font-weight: 600;">Calc II · Period 1</div>
+            <div class="dim tiny mt-6">Topic: Integration by parts · 28 students expected</div>
+          </div>
+          <div class="row gap-8">
+            <button class="btn btn-primary btn-sm">Start session →</button>
+            <button class="btn btn-ghost btn-sm">View lesson plan</button>
+          </div>
+          <p class="dim tiny mt-16">Auto-captioned, auto-transcribed, AI generates notes for students who miss class.</p>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ico">📈</span>This week so far</div>
+          </div>
+          <div class="row gap-14 mb-10">
+            <div>
+              <div style="font-size:22px;font-weight:600;background:var(--grad-ai);-webkit-background-clip:text;background-clip:text;color:transparent;">87%</div>
+              <div class="dim tiny">Avg quiz score</div>
+            </div>
+            <div>
+              <div style="font-size:22px;font-weight:600;background:var(--grad-ai);-webkit-background-clip:text;background-clip:text;color:transparent;">94%</div>
+              <div class="dim tiny">Attendance</div>
+            </div>
+            <div>
+              <div style="font-size:22px;font-weight:600;background:var(--grad-ai);-webkit-background-clip:text;background-clip:text;color:transparent;">3.2k</div>
+              <div class="dim tiny">AI tutor msgs</div>
+            </div>
+          </div>
+          <p class="dim tiny" style="line-height:1.55;">AI tutor is taking <strong style="color:#c4b5fd;">62%</strong> of routine questions, freeing your time for higher-touch work.</p>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="ico">👨‍👩‍👧</span>Parent updates queue</div>
+            <span class="card-tag amber">3 drafts</span>
+          </div>
+          <div class="dim" style="font-size:12.5px;line-height:1.55;">
+            AI has drafted updates for 3 parents based on this week's data. Review and approve, or skip.
+          </div>
+          <div class="row gap-8 mt-16">
+            <button class="btn btn-primary btn-sm">Review drafts →</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.dash-link[data-page]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.dash-link').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.suggestion').forEach(s => {
+    s.addEventListener('click', () => {
+      document.getElementById('composeInput').value = s.textContent;
+      document.getElementById('composeInput').focus();
+    });
+  });
+</script>
+
+</body>
+</html>

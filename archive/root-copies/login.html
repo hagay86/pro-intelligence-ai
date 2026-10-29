@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maven — התחבר / הירשם</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="maven.css" />
+<script src="config.js"></script>
+<style>
+  body { overflow: hidden; min-height: 100vh; }
+  .auth-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px) { .auth-page { grid-template-columns: 1fr; } .auth-side { display: none; } }
+
+  .auth-form-side {
+    background: var(--bg);
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .auth-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 60px;
+  }
+  .auth-back {
+    font-size: 13px;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+  .auth-back:hover { color: var(--indigo); }
+
+  .auth-container {
+    width: 100%; max-width: 380px;
+    margin: 0 auto;
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .auth-container h1 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .auth-container > p {
+    font-size: 14.5px;
+    color: var(--text-2);
+    margin-bottom: 36px;
+    line-height: 1.55;
+  }
+
+  .auth-tabs {
+    display: flex;
+    background: var(--bg-3);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 7px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-2);
+    transition: all 0.15s;
+  }
+  .auth-tab.active {
+    background: var(--bg);
+    color: var(--indigo);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .role-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .role-card {
+    padding: 14px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: right;
+  }
+  .role-card:hover { border-color: var(--border-2); }
+  .role-card.active {
+    border-color: var(--indigo);
+    background: var(--indigo-soft);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+  .role-icon { font-size: 22px; margin-bottom: 6px; }
+  .role-title { font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .role-desc { font-size: 11.5px; color: var(--text-2); line-height: 1.5; }
+
+  .anthropic-tile {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .anthropic-tile-mark {
+    width: 32px; height: 32px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #d97757, #c0612b);
+    display: grid; place-items: center;
+    color: white; font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .anthropic-tile-text {
+    flex: 1;
+    font-size: 12.5px;
+    color: #7c2d12;
+    line-height: 1.5;
+  }
+  .anthropic-tile-text b { color: #431407; }
+
+  .error-banner {
+    padding: 10px 13px;
+    background: var(--red-soft);
+    border: 1px solid #fca5a5;
+    border-radius: 9px;
+    color: #991b1b;
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .error-banner.show { display: block; }
+
+  .divider-row {
+    display: flex; align-items: center; gap: 12px;
+    margin: 22px 0;
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  .divider-row::before, .divider-row::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .social-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border-2);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all 0.15s;
+  }
+  .social-btn + .social-btn { margin-top: 8px; }
+  .social-btn:hover { background: var(--bg-2); border-color: var(--text-3); }
+  .social-btn .icon { font-size: 18px; }
+
+  .auth-foot {
+    text-align: center;
+    margin-top: auto;
+    padding-top: 24px;
+    font-size: 13px;
+    color: var(--text-3);
+  }
+
+  /* right side panel */
+  .auth-side {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+    color: white;
+    padding: 60px 50px;
+    position: relative;
+    overflow: hidden;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .auth-side::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.12), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(255,255,255,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .auth-side-inner { position: relative; max-width: 420px; }
+  .auth-side-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600;
+    color: white;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    margin-bottom: 28px;
+  }
+  .auth-side h2 {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    line-height: 1.15;
+    margin-bottom: 18px;
+  }
+  .auth-side > p {
+    font-size: 15.5px;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.65;
+    margin-bottom: 36px;
+  }
+  .auth-quote-card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 16px;
+    padding: 22px;
+    backdrop-filter: blur(20px);
+  }
+  .auth-quote-text {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.95);
+    margin-bottom: 18px;
+    font-style: italic;
+  }
+  .auth-quote-author {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .auth-quote-name { font-size: 14px; font-weight: 700; }
+  .auth-quote-role { font-size: 12px; color: rgba(255,255,255,0.7); }
+
+  .auth-stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 28px;
+  }
+  .auth-stat {
+    text-align: center;
+    padding: 14px 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+  }
+  .auth-stat-num {
+    font-size: 22px; font-weight: 800;
+    letter-spacing: -0.4px;
+    margin-bottom: 2px;
+  }
+  .auth-stat-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+  }
+</style>
+</head>
+<body>
+
+<div class="auth-page">
+
+  <!-- LEFT: form -->
+  <div class="auth-form-side">
+    <div class="auth-top">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">M</div>
+        <span class="logo-text">Maven<span class="ai">.ai</span></span>
+      </a>
+      <a href="index.html" class="auth-back">→ חזרה לאתר</a>
+    </div>
+
+    <div class="auth-container">
+      <h1 id="title">ברוך שובך</h1>
+      <p id="subtitle">התחבר לחשבון Maven שלך</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">התחבר</button>
+        <button class="auth-tab" data-tab="signup">הירשם</button>
+      </div>
+
+      <div class="error-banner" id="error"></div>
+
+      <!-- LOGIN -->
+      <form id="loginForm" class="auth-form">
+        <div class="field">
+          <label class="label">אימייל</label>
+          <input class="input" type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <div class="row between" style="margin-bottom:6px;">
+            <label class="label" style="margin-bottom:0;">סיסמה</label>
+            <a href="#" style="font-size:12px;color:var(--indigo);font-weight:500;">שכחת סיסמה?</a>
+          </div>
+          <input class="input" type="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn-primary btn-lg" type="submit" style="width:100%;margin-top:10px;">התחבר ←</button>
+
+        <div class="divider-row">או</div>
+
+        <button type="button" class="social-btn">
+          <span class="icon">G</span>
+          <span>התחבר עם Google</span>
+        </button>
+      </form>
+
+      <!-- SIGNUP -->
+      <form id="signupForm" class="auth-form" style="display:none;">
+        <div class="field">
+          <label class="label">אני…</label>
+          <div class="role-picker">
+            <button type="button" class="role-card active" data-role="professional">
+              <div class="role-icon">🧑‍🏫</div>
+              <div class="role-title">מורה / מומחה</div>
+              <div class="role-desc">אני רוצה לפתוח קהילה</div>
+            </button>
+            <button type="button" class="role-card" data-role="student">
+              <div class="role-icon">🎓</div>
+              <div class="role-title">תלמיד / חבר</div>
+              <div class="role-desc">יש לי קוד הזמנה</div>
+            </button>
+          </div>
+
+          <div class="anthropic-tile" id="anthropicTile">
+            <div class="anthropic-tile-mark">A</div>
+            <div class="anthropic-tile-text">
+              <b>בנוי על Anthropic Claude.</b> אם יש לך מנוי Claude Pro או Max — תוכל לחבר אותו אחרי ההרשמה והקהילה תרש את הסגנון שלך.
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">שם מלא</label>
+          <input class="input" type="text" name="name" placeholder="חגי דרדיק" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label class="label">אימייל</label>
+          <input class="input" type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label class="label">סיסמה</label>
+          <input class="input" type="password" name="password" placeholder="לפחות 6 תווים" autocomplete="new-password" minlength="6" required />
+          <p class="help">בהמשכך אתה מאשר את <a href="#">תנאי השימוש</a> ו<a href="#">מדיניות הפרטיות</a>.</p>
+        </div>
+        <button class="btn btn-primary btn-lg" type="submit" style="width:100%;margin-top:6px;">צור חשבון ←</button>
+
+        <div class="divider-row">או</div>
+
+        <button type="button" class="social-btn">
+          <span class="icon">G</span>
+          <span>הירשם עם Google</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-foot">
+      © 2026 Maven · בנוי בישראל · <a href="index.html" style="color:var(--indigo);">חזרה לאתר</a>
+    </div>
+  </div>
+
+  <!-- RIGHT: marketing panel -->
+  <aside class="auth-side">
+    <div class="auth-side-inner">
+      <div class="auth-side-eyebrow">
+        <span style="width:6px;height:6px;border-radius:50%;background:white;"></span>
+        בשיתוף Anthropic
+      </div>
+      <h2>הקהילה שלך, רק חכמה.</h2>
+      <p>הצטרף ליוצרי תוכן ומומחים ישראלים שכבר מוכרים את ה-AI שלהם דרך Maven. AI שמכיר אותך, לא AI גנרי.</p>
+
+      <div class="auth-quote-card">
+        <p class="auth-quote-text">"במקום שמאיה תשאל אותי באותה השאלה בפעם החמישית, Maven עונה לה במילים שלי. הקהילה שלי הפכה למוצר אמיתי בשבועיים."</p>
+        <div class="auth-quote-author">
+          <div class="avatar md c-indigo">חד</div>
+          <div>
+            <div class="auth-quote-name">חגי דרדיק</div>
+            <div class="auth-quote-role">פרסום דיגיטלי · 47 חברים בקהילה</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-stats-row">
+        <div class="auth-stat">
+          <div class="auth-stat-num">×10</div>
+          <div class="auth-stat-label">הזמן שלך</div>
+        </div>
+        <div class="auth-stat">
+          <div class="auth-stat-num">24/7</div>
+          <div class="auth-stat-label">זמינות</div>
+        </div>
+        <div class="auth-stat">
+          <div class="auth-stat-num">0%</div>
+          <div class="auth-stat-label">תשובות גנריות</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  function setTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+    if (tab === 'login') {
+      document.getElementById('title').textContent = 'ברוך שובך';
+      document.getElementById('subtitle').textContent = 'התחבר לחשבון Maven שלך';
+    } else {
+      document.getElementById('title').textContent = 'התחל את הקהילה שלך';
+      document.getElementById('subtitle').textContent = 'הירשם חינם, פתח את החדר הראשון תוך 30 שניות';
+    }
+    document.getElementById('error').classList.remove('show');
+  }
+  document.querySelectorAll('.auth-tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
+
+  // honor ?signup=1
+  if (new URLSearchParams(location.search).get('signup') === '1') setTab('signup');
+
+  // role picker
+  document.querySelectorAll('.role-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      // toggle anthropic tile (only show for professionals)
+      const isPro = card.dataset.role === 'professional';
+      document.getElementById('anthropicTile').style.display = isPro ? 'flex' : 'none';
+    });
+  });
+
+  function showError(msg) {
+    const el = document.getElementById('error');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function clearError() { document.getElementById('error').classList.remove('show'); }
+
+  // Login form
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearError();
+    const fd = new FormData(e.target);
+    const btn = e.target.querySelector('button[type=submit]');
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'מתחבר…';
+    try {
+      await window.mavenFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: fd.get('email'),
+          password: fd.get('password'),
+        }),
+      });
+      location.href = 'chat.html';
+    } catch (err) {
+      if (err.status === 0 || /failed to fetch|network/i.test(err.message)) {
+        showError(`לא הצלחנו להתחבר לשרת. ודא שהשרת רץ או שכתובת ה-API ב-config.js נכונה.`);
+      } else {
+        showError(err.message || 'התחברות נכשלה');
+      }
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  });
+
+  // Signup form
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearError();
+    const fd = new FormData(e.target);
+    const role = document.querySelector('.role-card.active')?.dataset.role || 'student';
+    const btn = e.target.querySelector('button[type=submit]');
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'יוצר חשבון…';
+    try {
+      await window.mavenFetch('/api/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: fd.get('email'),
+          password: fd.get('password'),
+          name: fd.get('name'),
+          role,
+        }),
+      });
+      location.href = 'chat.html?welcome=1';
+    } catch (err) {
+      if (err.status === 0 || /failed to fetch|network/i.test(err.message)) {
+        showError(`לא הצלחנו להתחבר לשרת. ודא שהשרת רץ או שכתובת ה-API ב-config.js נכונה.`);
+      } else {
+        showError(err.message || 'הרשמה נכשלה');
+      }
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  });
+
+  // Auto-redirect if already logged in
+  (async () => {
+    try {
+      const r = await window.mavenFetch('/api/auth/me');
+      if (r.user) location.href = 'chat.html';
+    } catch {}
+  })();
+</script>
+
+</body>
+</html>

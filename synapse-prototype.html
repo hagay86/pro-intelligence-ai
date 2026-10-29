@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Synapse — Learn from a professional through their AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-0: #05060f;
+    --bg-1: #0a0c1f;
+    --bg-2: rgba(20, 22, 45, 0.55);
+    --bg-3: rgba(15, 17, 35, 0.7);
+    --border: rgba(120, 130, 255, 0.18);
+    --border-soft: rgba(120, 130, 255, 0.1);
+    --text: #e4e7f1;
+    --text-dim: #94a3b8;
+    --text-faint: #64748b;
+    --violet: #8b5cf6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --grad-prof: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    --grad-stud: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    --grad-ai: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg-0); }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+      radial-gradient(ellipse 80% 50% at 30% 0%, rgba(139, 92, 246, 0.18), transparent 50%),
+      radial-gradient(ellipse 80% 50% at 70% 100%, rgba(6, 182, 212, 0.15), transparent 50%),
+      var(--bg-0);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* subtle grid backdrop */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(120, 130, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 130, 255, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; }
+
+  /* ─── top bar ─── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: rgba(8, 9, 22, 0.7);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--grad-ai);
+    display: grid;
+    place-items: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+    position: relative;
+  }
+  .logo-mark::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 12px;
+    background: var(--grad-ai);
+    filter: blur(12px);
+    opacity: 0.45;
+    z-index: -1;
+  }
+  .logo-text {
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -0.2px;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #c4b5fd;
+    margin-left: 6px;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+  }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 999px;
+    font-size: 12px;
+    color: #86efac;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ─── hero strip ─── */
+  .hero {
+    padding: 28px 32px 8px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 6px;
+  }
+  .hero p {
+    color: var(--text-dim);
+    font-size: 14px;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .hero .accent { color: #c4b5fd; }
+
+  /* ─── data flow visual ─── */
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin: 22px auto 14px;
+    padding: 12px 20px;
+    background: rgba(15, 17, 35, 0.5);
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    width: max-content;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .flow-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flow-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--bg-3);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+  }
+  .flow-arrow {
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── split layout ─── */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    padding: 16px 28px 36px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  @media (max-width: 1100px) {
+    .split { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--bg-2);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 760px;
+    position: relative;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent, var(--violet)), transparent);
+    opacity: 0.7;
+  }
+  .panel.professional { --accent: #8b5cf6; }
+  .panel.student { --accent: #06b6d4; }
+
+  /* panel header */
+  .panel-head {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .role-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .role-badge {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .role-name {
+    font-weight: 500;
+    font-size: 14px;
+  }
+  .role-sub {
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+  }
+  .avatar.prof { background: var(--grad-prof); box-shadow: 0 0 18px rgba(236,72,153,0.35); }
+  .avatar.stud { background: var(--grad-stud); box-shadow: 0 0 18px rgba(6,182,212,0.35); }
+
+  /* tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    background: rgba(8, 9, 22, 0.3);
+  }
+  .tab {
+    padding: 8px 14px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .tab:hover { color: white; }
+  .tab.active {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    color: white;
+  }
+  .tab-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tab .count {
+    font-size: 10px;
+    background: rgba(255,255,255,0.08);
+    padding: 1px 6px;
+    border-radius: 8px;
+    color: var(--text-dim);
+  }
+
+  /* content area */
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .view { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .view.active { display: flex; }
+
+  /* ─── chat ─── */
+  .chat {
+    flex: 1;
+    padding: 18px 22px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+  .chat::-webkit-scrollbar { width: 6px; }
+  .chat::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.2); border-radius: 4px; }
+
+  .msg {
+    display: flex;
+    gap: 11px;
+    max-width: 90%;
+    animation: slideIn 0.4s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+  }
+  .msg-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+  }
+  .msg-name { font-weight: 600; color: var(--text); }
+  .msg-time { color: var(--text-faint); }
+  .msg-text {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: #d6dbe8;
+    background: rgba(20, 22, 45, 0.5);
+    border: 1px solid var(--border-soft);
+    padding: 10px 13px;
+    border-radius: 12px;
+    border-top-left-radius: 4px;
+  }
+  .msg.you { align-self: flex-end; flex-direction: row-reverse; max-width: 78%; }
+  .msg.you .msg-text {
+    background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(6,182,212,0.12));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 4px;
+  }
+  .msg.you .msg-meta { justify-content: flex-end; }
+
+  /* AI message — bigger, distinguished */
+  .msg.ai {
+    align-self: stretch;
+    max-width: 100%;
+    background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.05));
+    border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 14px;
+    padding: 14px 16px;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .msg.ai::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 2px;
+    background: var(--grad-ai);
+    box-shadow: 0 0 12px rgba(139,92,246,0.6);
+  }
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+  }
+  .ai-mark {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--grad-ai);
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 0 12px rgba(139,92,246,0.55);
+  }
+  .ai-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+  }
+  .ai-tag {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.3);
+    font-weight: 600;
+  }
+  .ai-source {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ai-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #e4e7f1;
+  }
+  .ai-text strong { color: #c4b5fd; font-weight: 600; }
+  .ai-text .cite {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 7px;
+    background: rgba(6,182,212,0.12);
+    border: 1px solid rgba(6,182,212,0.3);
+    color: #67e8f9;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    margin: 0 2px;
+  }
+
+  /* divider for system message */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-faint);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin: 4px 0;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+  }
+
+  /* input */
+  .input-wrap {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border-soft);
+    background: rgba(8, 9, 22, 0.4);
+  }
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px 8px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-row:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  .input-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: white;
+    font-size: 13.5px;
+    font-family: inherit;
+    padding: 6px 0;
+  }
+  .input-row input::placeholder { color: var(--text-faint); }
+  .input-mode {
+    display: flex;
+    gap: 2px;
+    background: rgba(20,22,45,0.6);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .mode-btn {
+    font-size: 11px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-dim);
+    border: none;
+    background: transparent;
+    font-weight: 500;
+  }
+  .mode-btn.active { background: rgba(139,92,246,0.25); color: white; }
+  .send-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: none;
+    background: var(--grad-ai);
+    color: white;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    box-shadow: 0 0 16px rgba(139,92,246,0.4);
+  }
+  .send-btn:hover { transform: translateY(-1px); }
+
+  /* ─── settings view (professional) ─── */
+  .settings {
+    padding: 20px 22px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .settings::-webkit-scrollbar { width: 6px; }
+  .settings::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.2); border-radius: 4px; }
+
+  .card {
+    background: rgba(15, 17, 35, 0.6);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .ico {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: rgba(139,92,246,0.15);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+  }
+  .card-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .source-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 13px;
+    background: rgba(20, 22, 45, 0.5);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: all 0.15s;
+  }
+  .source-row.on {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.3);
+  }
+  .source-row.off { opacity: 0.55; }
+  .source-info { display: flex; flex-direction: column; gap: 2px; }
+  .source-name {
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .source-meta {
+    font-size: 11px;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .source-private {
+    font-size: 10px;
+    padding: 2px 7px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+    border-radius: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  /* toggle */
+  .toggle {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    background: rgba(100, 116, 139, 0.3);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid transparent;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .toggle.on {
+    background: var(--grad-ai);
+    box-shadow: 0 0 12px rgba(139,92,246,0.4);
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* student roster */
+  .student-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .student-chip {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    background: rgba(20,22,45,0.5);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+  }
+  .student-chip .avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 10px;
+  }
+  .student-chip .name { font-size: 12px; font-weight: 500; }
+  .student-chip .activity { font-size: 10px; color: var(--text-faint); }
+
+  /* stat row */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stat {
+    background: rgba(15,17,35,0.6);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 22px;
+    font-weight: 600;
+    background: var(--grad-ai);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* connection line between panels */
+  .connector {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    pointer-events: none;
+    display: none;
+  }
+  @media (min-width: 1101px) {
+    .connector { display: block; }
+  }
+  .connector-pill {
+    background: rgba(8,9,22,0.9);
+    border: 1px solid rgba(139,92,246,0.4);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: #c4b5fd;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 30px rgba(139,92,246,0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .connector-pill .dot { background: var(--violet); box-shadow: 0 0 10px var(--violet); }
+
+  /* footer */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-faint);
+    font-size: 11px;
+    border-top: 1px solid var(--border-soft);
+  }
+  .footer code {
+    font-family: 'JetBrains Mono', monospace;
+    color: #94a3b8;
+    background: rgba(15,17,35,0.6);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-mark">S</div>
+      <div>
+        <span class="logo-text">Synapse</span>
+        <span class="tag">BETA</span>
+      </div>
+    </div>
+    <div class="status-pill">
+      <span class="dot"></span>
+      Professional's Claude connected via Make.com
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Learn through your professional's AI</h1>
+    <p>The professional already works with Claude every day. Synapse gives their students access to <span class="accent">that same working relationship</span> — a group classroom and a private AI shaped by the expert's real conversations.</p>
+
+    <div class="flow">
+      <div class="flow-node"><span class="flow-icon">🧑‍🏫</span><span>Professional's Claude</span></div>
+      <span class="flow-arrow">──▶</span>
+      <div class="flow-node"><span class="flow-icon">⚙</span><span>Make.com sync</span></div>
+      <span class="flow-arrow">──▶</span>
+      <div class="flow-node"><span class="flow-icon">🧠</span><span>Synapse context layer</span></div>
+      <span class="flow-arrow">──▶</span>
+      <div class="flow-node"><span class="flow-icon">🎓</span><span>Students</span></div>
+    </div>
+  </section>
+
+  <!-- SPLIT VIEW -->
+  <main class="split" style="position:relative;">
+
+    <!-- ─── PROFESSIONAL PANEL ─── -->
+    <section class="panel professional" id="prof-panel">
+      <div class="panel-head">
+        <div class="role-block">
+          <div class="avatar prof">HD</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="role-name">Hagay Dardik</span>
+              <span class="role-badge">Professional</span>
+            </div>
+            <div class="role-sub">Digital Advertising · Cohort #3 · 10 students</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs" data-side="prof">
+        <button class="tab active" data-view="prof-group"><span class="tab-dot"></span>Group Class <span class="count">14</span></button>
+        <button class="tab" data-view="prof-knowledge">Knowledge Sources</button>
+        <button class="tab" data-view="prof-students">Students</button>
+      </div>
+
+      <div class="content">
+
+        <!-- prof: group chat view -->
+        <div class="view active" id="prof-group">
+          <div class="chat">
+            <div class="divider">Today · Cohort #3 group class</div>
+
+            <div class="msg">
+              <div class="msg-avatar avatar prof">HD</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-name">You (Hagay)</span><span class="msg-time">9:02 AM</span></div>
+                <div class="msg-text">Morning class 👋 Today we're breaking down creative testing for cold audiences. I'll let the AI walk you through my framework first, then we'll workshop your accounts.</div>
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar avatar stud">MK</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-name">Maya K.</span><span class="msg-time">9:04 AM</span></div>
+                <div class="msg-text">How do you decide budget per creative when testing? I keep over-allocating to losers.</div>
+              </div>
+            </div>
+
+            <div class="msg you">
+              <div class="msg-avatar avatar prof">HD</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-time">9:05 AM</span><span class="msg-name">You</span></div>
+                <div class="msg-text">@AI — explain my testing budget framework, pull from the Q4 Meta project.</div>
+              </div>
+            </div>
+
+            <div class="msg ai">
+              <div class="ai-header">
+                <div class="ai-mark">AI</div>
+                <span class="ai-name">Synapse AI</span>
+                <span class="ai-tag">Trained on Hagay's Claude</span>
+                <span class="ai-source">source: Q4 Meta Campaigns</span>
+              </div>
+              <div class="ai-text">
+                Here's <strong>Hagay's testing framework</strong>, pulled from his Q4 work:<br><br>
+                Start at <strong>$50/day per creative</strong>, run for 48 hours minimum before judging. Kill anything below <strong>1.2% CTR</strong> on cold audiences, double budget on winners that hit 2%+. Test exactly <strong>4 creatives per ad set</strong> — never more, because Meta's algorithm under-distributes when you exceed that.<br><br>
+                He arrived at these numbers after burning $8K on over-segmented tests in <span class="cite">📁 Q4 Meta — Week 2</span>. The lesson: testing isn't about variety, it's about giving each creative enough volume to make the verdict trustworthy.
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar avatar stud">JR</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-name">Jordan R.</span><span class="msg-time">9:07 AM</span></div>
+                <div class="msg-text">Does the 48-hour rule still apply if the campaign hits significance earlier?</div>
+              </div>
+            </div>
+
+            <div class="msg you">
+              <div class="msg-avatar avatar prof">HD</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-time">9:08 AM</span><span class="msg-name">You</span></div>
+                <div class="msg-text">Great question — even with early significance I wait. Day-parting hides itself before 48h. Going to record a voice note on this.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-wrap">
+            <div class="input-row">
+              <div class="input-mode">
+                <button class="mode-btn active">💬 Chat</button>
+                <button class="mode-btn">✨ @AI</button>
+              </div>
+              <input type="text" placeholder="Message your cohort…" />
+              <button class="send-btn">↑</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- prof: knowledge sources view -->
+        <div class="view" id="prof-knowledge">
+          <div class="settings">
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title"><span class="ico">🔗</span>Claude account connection</div>
+                <span class="status-pill" style="font-size:11px;padding:5px 10px;"><span class="dot"></span>Live</span>
+              </div>
+              <div class="card-sub">Connected <strong style="color:#fff">hagay@digitalads.com</strong> via Make.com scenario <code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#a5b4fc;">syn-prof-0241</code>. Last sync 3 min ago.</div>
+              <div class="stat-row">
+                <div class="stat"><div class="stat-num">847</div><div class="stat-label">Conversations</div></div>
+                <div class="stat"><div class="stat-num">12</div><div class="stat-label">Projects</div></div>
+                <div class="stat"><div class="stat-num">5</div><div class="stat-label">Shared</div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title"><span class="ico">📂</span>What students can learn from</div>
+              </div>
+              <div class="card-sub">Toggle which of your Claude projects feed the students' AI. They never see raw transcripts — only the patterns, frameworks, and decisions inside.</div>
+
+              <div class="source-row on">
+                <div class="source-info">
+                  <div class="source-name">Q4 Meta Campaigns</div>
+                  <div class="source-meta">182 chats · 1.4M tokens · updated 2h ago</div>
+                </div>
+                <div class="toggle on" data-toggle></div>
+              </div>
+
+              <div class="source-row on">
+                <div class="source-info">
+                  <div class="source-name">Google Ads — SaaS clients</div>
+                  <div class="source-meta">96 chats · 720K tokens · updated yesterday</div>
+                </div>
+                <div class="toggle on" data-toggle></div>
+              </div>
+
+              <div class="source-row on">
+                <div class="source-info">
+                  <div class="source-name">Creative testing framework</div>
+                  <div class="source-meta">44 chats · 310K tokens · updated 3d ago</div>
+                </div>
+                <div class="toggle on" data-toggle></div>
+              </div>
+
+              <div class="source-row on">
+                <div class="source-info">
+                  <div class="source-name">Audience research playbooks</div>
+                  <div class="source-meta">71 chats · 510K tokens · updated 1w ago</div>
+                </div>
+                <div class="toggle on" data-toggle></div>
+              </div>
+
+              <div class="source-row off">
+                <div class="source-info">
+                  <div class="source-name">
+                    Personal finance
+                    <span class="source-private">PRIVATE</span>
+                  </div>
+                  <div class="source-meta">38 chats · not shared</div>
+                </div>
+                <div class="toggle" data-toggle></div>
+              </div>
+
+              <div class="source-row off">
+                <div class="source-info">
+                  <div class="source-name">
+                    Client contracts (legal)
+                    <span class="source-private">PRIVATE</span>
+                  </div>
+                  <div class="source-meta">12 chats · not shared</div>
+                </div>
+                <div class="toggle" data-toggle></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title"><span class="ico">🎚</span>How the AI should sound</div>
+              </div>
+              <div class="card-sub">The AI mirrors your voice when answering students. Adjust the persona it uses.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+                <span style="padding:6px 12px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.35);border-radius:8px;font-size:12px;color:#c4b5fd;">Direct &amp; tactical ✓</span>
+                <span style="padding:6px 12px;background:rgba(15,17,35,0.6);border:1px solid var(--border-soft);border-radius:8px;font-size:12px;color:var(--text-dim);">Encouraging</span>
+                <span style="padding:6px 12px;background:rgba(15,17,35,0.6);border:1px solid var(--border-soft);border-radius:8px;font-size:12px;color:var(--text-dim);">Academic</span>
+                <span style="padding:6px 12px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.35);border-radius:8px;font-size:12px;color:#c4b5fd;">Numbers-first ✓</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- prof: students view -->
+        <div class="view" id="prof-students">
+          <div class="settings">
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title"><span class="ico">👥</span>Cohort #3 — 10 students</div>
+                <span style="font-size:11px;color:var(--text-faint);">7 active today</span>
+              </div>
+              <div class="student-grid">
+                <div class="student-chip"><div class="avatar stud">MK</div><div><div class="name">Maya K.</div><div class="activity">● Active · 12 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">JR</div><div><div class="name">Jordan R.</div><div class="activity">● Active · 8 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">SL</div><div><div class="name">Sam L.</div><div class="activity">● Active · 21 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">DV</div><div><div class="name">Dana V.</div><div class="activity">○ 2d idle · 4 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">PM</div><div><div class="name">Priya M.</div><div class="activity">● Active · 15 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">OB</div><div><div class="name">Omar B.</div><div class="activity">● Active · 9 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">RS</div><div><div class="name">Rita S.</div><div class="activity">● Active · 18 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">TC</div><div><div class="name">Tom C.</div><div class="activity">○ 1d idle · 6 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">EN</div><div><div class="name">Elena N.</div><div class="activity">● Active · 11 chats</div></div></div>
+                <div class="student-chip"><div class="avatar stud">KW</div><div><div class="name">Kai W.</div><div class="activity">○ 3d idle · 2 chats</div></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title"><span class="ico">🔥</span>What students are asking this week</div>
+              </div>
+              <div class="card-sub" style="margin:0;">
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);"><span>Creative testing budget</span><span style="color:#c4b5fd;font-weight:600;">14 asks</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);"><span>How to read CAC by channel</span><span style="color:#c4b5fd;font-weight:600;">9 asks</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);"><span>Killing losing ad sets</span><span style="color:#c4b5fd;font-weight:600;">7 asks</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>Hook formulas for cold</span><span style="color:#c4b5fd;font-weight:600;">6 asks</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- connector pill between panels -->
+    <div class="connector">
+      <div class="connector-pill"><span class="dot"></span>shared_context :: live</div>
+    </div>
+
+    <!-- ─── STUDENT PANEL ─── -->
+    <section class="panel student" id="stud-panel">
+      <div class="panel-head">
+        <div class="role-block">
+          <div class="avatar stud">MK</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="role-name">Maya Klein</span>
+              <span class="role-badge">Student</span>
+            </div>
+            <div class="role-sub">Learning from Hagay · Digital Advertising · Week 3</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs" data-side="stud">
+        <button class="tab active" data-view="stud-private"><span class="tab-dot"></span>Private AI <span class="count">∞</span></button>
+        <button class="tab" data-view="stud-group">Group Class <span class="count">14</span></button>
+      </div>
+
+      <div class="content">
+
+        <!-- student: private AI -->
+        <div class="view active" id="stud-private">
+          <div class="chat">
+            <div class="divider">1:1 with Hagay's AI · private</div>
+
+            <div class="msg ai">
+              <div class="ai-header">
+                <div class="ai-mark">AI</div>
+                <span class="ai-name">Hagay's AI</span>
+                <span class="ai-tag">Private session</span>
+                <span class="ai-source">2:14 PM</span>
+              </div>
+              <div class="ai-text">
+                Hey Maya — what are you working on? I can pull from anything Hagay has shared with the class. Today he opened up his <strong>Q4 Meta playbook</strong> and his <strong>creative testing framework</strong>, so account audits and testing strategy are wide open.
+              </div>
+            </div>
+
+            <div class="msg you">
+              <div class="msg-avatar avatar stud">MK</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-time">2:15 PM</span></div>
+                <div class="msg-text">I'm running a fitness brand on Meta. ROAS is 1.4, CAC is way above target. What would Hagay do?</div>
+              </div>
+            </div>
+
+            <div class="msg ai">
+              <div class="ai-header">
+                <div class="ai-mark">AI</div>
+                <span class="ai-name">Hagay's AI</span>
+                <span class="ai-source">grounded in 3 chats</span>
+              </div>
+              <div class="ai-text">
+                Hagay sees this pattern often — and he's clear about the order to attack it.<br><br>
+                <strong>First, audit creative, not audience.</strong> 1.4 ROAS with above-target CAC almost always means the hook isn't doing work. In <span class="cite">📁 Q4 Meta — fitness pilot</span> he found that 78% of underperforming accounts had the same problem: pretty visuals, weak first 3 seconds.<br><br>
+                <strong>His diagnostic order:</strong><br>
+                1. Pull thumbstop ratio per creative. If anything is below 30%, kill it before touching anything else.<br>
+                2. Look at the breakdown by placement. Hagay caps Audience Network <em>aggressively</em> for fitness — it inflates spend with bot traffic.<br>
+                3. Only then look at audience. If the top 3 creatives are healthy but ROAS is still bad, then it's targeting.<br><br>
+                Want me to walk you through pulling the thumbstop report? I have the exact path Hagay uses.
+              </div>
+            </div>
+
+            <div class="msg you">
+              <div class="msg-avatar avatar stud">MK</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-time">2:18 PM</span></div>
+                <div class="msg-text">Yes please. Also — why does he cap Audience Network for fitness specifically?</div>
+              </div>
+            </div>
+
+            <div class="msg ai">
+              <div class="ai-header">
+                <div class="ai-mark">AI</div>
+                <span class="ai-name">Hagay's AI</span>
+                <span class="ai-source">grounded in 1 chat · Aug 2025</span>
+              </div>
+              <div class="ai-text">
+                Good catch — this came up specifically in a conversation Hagay had with Claude on <span class="cite">📅 Aug 14</span>. He'd been seeing CPMs on Audience Network at half the price of Feed, which felt like a win, but the post-purchase CAC was <strong>3.2x higher</strong>. He traced it: AN was driving clicks from incentivized traffic (game ad networks reskinning offers). Fitness offers are especially vulnerable because the "free trial" language gets gamed.<br><br>
+                Since then his default is: <strong>AN off until proven otherwise</strong>, for any health, fitness, or trial-based offer. Other verticals he'll leave it on.<br><br>
+                On the thumbstop report — go to Ads Manager → Columns → Customize → add <em>Video Average Play Time</em> and <em>3-sec Video Plays</em>. Divide 3-sec plays by impressions. Below 30% means people are scrolling past. Want me to draft the message you'd send your client about killing those creatives?
+              </div>
+            </div>
+          </div>
+
+          <div class="input-wrap">
+            <div class="input-row">
+              <span style="font-size:11px;color:var(--text-faint);padding:0 4px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#06b6d4;box-shadow:0 0 8px #06b6d4;"></span>private</span>
+              <input type="text" placeholder="Ask Hagay's AI anything…" />
+              <button class="send-btn">↑</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- student: group view (mirrored) -->
+        <div class="view" id="stud-group">
+          <div class="chat">
+            <div class="divider">Today · Cohort #3 group class</div>
+
+            <div class="msg">
+              <div class="msg-avatar avatar prof">HD</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-name">Hagay</span><span class="msg-time">9:02 AM</span></div>
+                <div class="msg-text">Morning class 👋 Today we're breaking down creative testing for cold audiences. I'll let the AI walk you through my framework first, then we'll workshop your accounts.</div>
+              </div>
+            </div>
+
+            <div class="msg you">
+              <div class="msg-avatar avatar stud">MK</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-time">9:04 AM</span><span class="msg-name">You</span></div>
+                <div class="msg-text">How do you decide budget per creative when testing? I keep over-allocating to losers.</div>
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar avatar prof">HD</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-name">Hagay</span><span class="msg-time">9:05 AM</span></div>
+                <div class="msg-text">@AI — explain my testing budget framework, pull from the Q4 Meta project.</div>
+              </div>
+            </div>
+
+            <div class="msg ai">
+              <div class="ai-header">
+                <div class="ai-mark">AI</div>
+                <span class="ai-name">Synapse AI</span>
+                <span class="ai-tag">in group</span>
+                <span class="ai-source">source: Q4 Meta Campaigns</span>
+              </div>
+              <div class="ai-text">
+                Here's <strong>Hagay's testing framework</strong>, pulled from his Q4 work:<br><br>
+                Start at <strong>$50/day per creative</strong>, run for 48 hours minimum. Kill anything below <strong>1.2% CTR</strong>, double winners that hit 2%+. Test exactly <strong>4 creatives per ad set</strong> — Meta under-distributes above that.<br><br>
+                He arrived at these numbers after burning $8K on over-segmented tests in <span class="cite">📁 Q4 Meta — Week 2</span>.
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar avatar stud">JR</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-name">Jordan R.</span><span class="msg-time">9:07 AM</span></div>
+                <div class="msg-text">Does the 48-hour rule still apply if the campaign hits significance earlier?</div>
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar avatar prof">HD</div>
+              <div class="msg-body">
+                <div class="msg-meta"><span class="msg-name">Hagay</span><span class="msg-time">9:08 AM</span></div>
+                <div class="msg-text">Great question — even with early significance I wait. Day-parting hides itself before 48h. Going to record a voice note on this.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-wrap">
+            <div class="input-row">
+              <div class="input-mode">
+                <button class="mode-btn active">💬 Chat</button>
+                <button class="mode-btn">✨ @AI</button>
+              </div>
+              <input type="text" placeholder="Reply to your cohort…" />
+              <button class="send-btn">↑</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Prototype · Synapse v0.1 · <code>professional → make.com → claude → student</code>
+  </footer>
+
+</div>
+
+<script>
+  // tab switching, scoped per panel
+  document.querySelectorAll('.tabs').forEach(tabsEl => {
+    const panel = tabsEl.closest('.panel');
+    tabsEl.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // deactivate tabs
+        tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        // switch views
+        const target = tab.dataset.view;
+        panel.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        const view = panel.querySelector('#' + target);
+        if (view) view.classList.add('active');
+      });
+    });
+  });
+
+  // toggle behavior
+  document.querySelectorAll('[data-toggle]').forEach(t => {
+    t.addEventListener('click', () => {
+      t.classList.toggle('on');
+      const row = t.closest('.source-row');
+      if (row) {
+        const isOn = t.classList.contains('on');
+        row.classList.toggle('on', isOn);
+        row.classList.toggle('off', !isOn);
+      }
+    });
+  });
+
+  // input mode swap
+  document.querySelectorAll('.input-mode').forEach(modeEl => {
+    modeEl.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modeEl.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const input = btn.closest('.input-row').querySelector('input');
+        if (btn.textContent.includes('AI')) {
+          input.placeholder = 'Ask the AI anything — your cohort will see the answer…';
+        } else {
+          input.placeholder = 'Message your cohort…';
+        }
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

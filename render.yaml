@@ -1,0 +1,19 @@
+# One-click deploy on Render (render.com → New → Blueprint → pick this repo).
+# Needs a paid "Starter" instance because the database lives on a persistent disk.
+services:
+  - type: web
+    name: maven
+    runtime: docker
+    plan: starter
+    healthCheckPath: /healthz
+    disk:
+      name: maven-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false          # paste your key in the Render dashboard
+      - key: OWNER_EMAILS
+        value: hagaydardik@gmail.com
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-4-5

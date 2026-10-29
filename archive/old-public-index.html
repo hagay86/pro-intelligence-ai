@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Synapse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-0: #05060f;
+    --bg-1: rgba(15, 17, 35, 0.6);
+    --bg-2: rgba(20, 22, 45, 0.55);
+    --bg-3: rgba(15, 17, 35, 0.7);
+    --border: rgba(120, 130, 255, 0.18);
+    --border-soft: rgba(120, 130, 255, 0.1);
+    --text: #e4e7f1;
+    --text-dim: #94a3b8;
+    --text-faint: #64748b;
+    --violet: #8b5cf6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --grad-ai: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg-0); height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 50% at 30% 0%, rgba(139, 92, 246, 0.18), transparent 50%),
+      radial-gradient(ellipse 80% 50% at 70% 100%, rgba(6, 182, 212, 0.15), transparent 50%),
+      var(--bg-0);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(120, 130, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 130, 255, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+    z-index: 0;
+  }
+
+  .screen { display: none; height: 100vh; position: relative; z-index: 1; }
+  .screen.active { display: block; }
+
+  /* ────────────────────────────────────────────────────────
+     SHARED COMPONENTS
+  ──────────────────────────────────────────────────────── */
+  .logo {
+    display: inline-flex; align-items: center; gap: 12px;
+  }
+  .logo-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    color: white; font-weight: 700; font-size: 17px;
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+    position: relative;
+  }
+  .logo-mark::after {
+    content: ''; position: absolute; inset: -2px; border-radius: 12px;
+    background: var(--grad-ai); filter: blur(12px); opacity: 0.45; z-index: -1;
+  }
+  .logo-text { font-weight: 600; font-size: 18px; letter-spacing: -0.2px; }
+  .tag {
+    font-size: 10px; padding: 3px 8px; border-radius: 999px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #c4b5fd; margin-left: 6px; letter-spacing: 0.6px; font-weight: 600;
+  }
+  .btn {
+    padding: 10px 16px;
+    border-radius: 11px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex; align-items: center; gap: 8px;
+    justify-content: center;
+    transition: transform 0.1s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--grad-ai);
+    color: white;
+    box-shadow: 0 0 18px rgba(139,92,246,0.4);
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 26px rgba(139,92,246,0.55); }
+  .btn-ghost {
+    background: rgba(15,17,35,0.6);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .btn-ghost:hover { color: white; border-color: rgba(139,92,246,0.4); }
+  .input {
+    width: 100%;
+    background: rgba(8, 9, 22, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 12px 14px;
+    color: white;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input::placeholder { color: var(--text-faint); }
+  .input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+  .label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 7px;
+  }
+  .field { margin-bottom: 16px; }
+
+  /* ────────────────────────────────────────────────────────
+     AUTH SCREEN
+  ──────────────────────────────────────────────────────── */
+  #auth-screen { display: none; }
+  #auth-screen.active {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .auth-wrap {
+    width: 100%;
+    max-width: 440px;
+    display: flex; flex-direction: column;
+    gap: 18px;
+  }
+  .auth-header {
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .auth-header .logo { margin-bottom: 14px; }
+  .auth-header h1 {
+    font-size: 26px;
+    font-weight: 600;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .auth-header p {
+    font-size: 14px; color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .auth-card {
+    background: var(--bg-2);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    position: relative;
+  }
+  .auth-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    opacity: 0.7;
+  }
+  .auth-tabs {
+    display: flex;
+    background: rgba(8, 9, 22, 0.6);
+    border-radius: 11px;
+    padding: 4px;
+    margin-bottom: 22px;
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .auth-tab.active {
+    background: var(--grad-ai);
+    color: white;
+    box-shadow: 0 0 16px rgba(139,92,246,0.4);
+  }
+  .role-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .role-card {
+    padding: 14px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: rgba(8, 9, 22, 0.4);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  .role-card:hover { border-color: rgba(139,92,246,0.4); }
+  .role-card.active {
+    border-color: var(--violet);
+    background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(6,182,212,0.06));
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
+  }
+  .role-card .role-icon {
+    font-size: 20px; margin-bottom: 6px;
+  }
+  .role-card .role-title {
+    font-size: 13px; font-weight: 600; margin-bottom: 2px;
+  }
+  .role-card .role-desc {
+    font-size: 11.5px; color: var(--text-dim); line-height: 1.4;
+  }
+
+  .auth-error {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .auth-error.show { display: block; }
+
+  .auth-footer {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    margin-top: 14px;
+  }
+
+  /* ────────────────────────────────────────────────────────
+     ROOMS SCREEN
+  ──────────────────────────────────────────────────────── */
+  #rooms-screen { display: none; }
+  #rooms-screen.active { display: flex; flex-direction: column; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    background: rgba(8, 9, 22, 0.7);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 18px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .user-pill {
+    display: flex; align-items: center; gap: 9px;
+    padding: 5px 12px 5px 5px;
+    background: rgba(15, 17, 35, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12.5px;
+    cursor: pointer;
+    position: relative;
+  }
+  .user-pill:hover { border-color: rgba(139,92,246,0.4); }
+  .user-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: white;
+  }
+  .c-violet { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+  .c-cyan   { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+  .c-blue   { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+  .c-green  { background: linear-gradient(135deg, #10b981, #06b6d4); }
+  .c-pink   { background: linear-gradient(135deg, #ec4899, #f97316); }
+  .c-amber  { background: linear-gradient(135deg, #f59e0b, #ec4899); }
+  .c-ai     { background: var(--grad-ai); }
+
+  .user-info { display: flex; flex-direction: column; gap: 1px; line-height: 1; }
+  .user-name { font-weight: 500; font-size: 12.5px; }
+  .user-role { font-size: 9.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.7px; }
+  .user-caret { color: var(--text-faint); font-size: 10px; padding-left: 2px; }
+
+  .menu {
+    position: absolute;
+    top: 100%; right: 0; margin-top: 6px;
+    background: rgba(15, 17, 35, 0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 5px;
+    min-width: 180px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    z-index: 100;
+    display: none;
+  }
+  .menu.open { display: block; }
+  .menu-item {
+    padding: 8px 10px; border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .menu-item:hover { background: rgba(139,92,246,0.1); color: white; }
+  .menu-item.danger:hover { background: rgba(239,68,68,0.1); color: #fca5a5; }
+
+  .rooms-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 38px 24px;
+  }
+  .rooms-inner {
+    max-width: 880px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+  .rooms-header h1 {
+    font-size: 30px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .rooms-header p {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+  .rooms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 700px) { .rooms-grid { grid-template-columns: 1fr; } }
+
+  .room-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    width: 100%;
+  }
+  .room-card:hover {
+    border-color: rgba(139,92,246,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(139,92,246,0.15);
+  }
+  .room-card .room-name {
+    font-size: 15px; font-weight: 600; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .room-card .room-topic { font-size: 12.5px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.4; }
+  .room-card .room-meta {
+    display: flex; gap: 12px;
+    font-size: 11px; color: var(--text-faint);
+  }
+  .room-card .meta-item { display: flex; align-items: center; gap: 5px; }
+
+  .action-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 700px) { .action-cards { grid-template-columns: 1fr; } }
+
+  .action-card {
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));
+    border: 1px dashed rgba(139,92,246,0.35);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .action-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .action-card h3 .ico {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    font-size: 12px; color: white;
+  }
+  .action-card p {
+    font-size: 12.5px; color: var(--text-dim);
+    margin-bottom: 14px; line-height: 1.5;
+  }
+  .action-card .field:last-of-type { margin-bottom: 12px; }
+  .action-card .row { display: flex; gap: 8px; }
+  .action-card .row .input { flex: 1; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-faint);
+    font-size: 13px;
+    background: rgba(15,17,35,0.4);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+  }
+
+  /* ────────────────────────────────────────────────────────
+     CHAT SCREEN (existing layout, scoped to room)
+  ──────────────────────────────────────────────────────── */
+  #chat-screen { display: none; }
+  #chat-screen.active {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+  }
+
+  .room-name {
+    margin-left: 18px; padding-left: 18px;
+    border-left: 1px solid var(--border);
+    font-size: 13px; color: var(--text-dim);
+  }
+  .room-name b { color: white; font-weight: 500; }
+  .room-name .code {
+    margin-left: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.25);
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .room-name .code:hover { background: rgba(139,92,246,0.2); }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 12px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 999px;
+    font-size: 11.5px; color: #86efac;
+  }
+  .status-pill.warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); color: #fbbf24; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s ease-in-out infinite; }
+  .status-pill.warn .dot { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .icon-btn {
+    width: 32px; height: 32px;
+    background: rgba(15,17,35,0.6);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: grid; place-items: center;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .icon-btn:hover { background: rgba(139,92,246,0.1); color: white; }
+
+  .main {
+    display: grid;
+    grid-template-columns: 260px 1fr 340px;
+    min-height: 0;
+  }
+  @media (max-width: 1200px) { .main { grid-template-columns: 220px 1fr 300px; } }
+  @media (max-width: 980px)  { .main { grid-template-columns: 220px 1fr; } .notes-pane { display: none; } }
+  @media (max-width: 760px)  { .main { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar {
+    background: rgba(8, 9, 22, 0.5);
+    border-right: 1px solid var(--border-soft);
+    padding: 18px 14px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .sidebar h3 {
+    font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--text-faint); font-weight: 600;
+    padding: 0 8px; margin-bottom: 4px;
+  }
+  .ai-member {
+    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.06));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 0 20px rgba(139,92,246,0.15);
+  }
+  .ai-member .ai-orb {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    color: white; font-size: 11px; font-weight: 700;
+    box-shadow: 0 0 14px rgba(139,92,246,0.55);
+  }
+  .ai-member-info { flex: 1; }
+  .ai-member-name { font-size: 12.5px; font-weight: 600; }
+  .ai-member-status { font-size: 10px; color: #c4b5fd; }
+
+  .member {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px; border-radius: 9px;
+  }
+  .member.me { background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); }
+  .member-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: white;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .member-avatar::after {
+    content: ''; position: absolute; bottom: -1px; right: -1px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--bg-0);
+  }
+  .member-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .member-role { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.6px; }
+  .member.prof .member-role { color: #c4b5fd; }
+
+  .chat-pane {
+    display: flex; flex-direction: column;
+    min-height: 0;
+    background: rgba(8, 9, 22, 0.3);
+  }
+  .chat-head {
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .chat-head h2 { font-size: 15px; font-weight: 600; }
+  .chat-head .sub { font-size: 12px; color: var(--text-dim); }
+
+  .messages {
+    flex: 1; overflow-y: auto;
+    padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 18px;
+    scroll-behavior: smooth;
+  }
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.2); border-radius: 4px; }
+
+  .day-divider {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-faint); font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    margin: 4px 0 2px;
+  }
+  .day-divider::before, .day-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-soft); }
+
+  .msg { display: flex; gap: 12px; animation: slideIn 0.35s ease; max-width: 100%; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+  .msg-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+  .msg-meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+  .msg-name { font-weight: 600; color: var(--text); }
+  .msg-role-tag {
+    font-size: 9px; padding: 1px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700;
+  }
+  .msg-role-tag.prof {
+    background: rgba(139,92,246,0.18);
+    border: 1px solid rgba(139,92,246,0.35);
+    color: #c4b5fd;
+  }
+  .msg-time { color: var(--text-faint); font-size: 11px; }
+  .msg-text {
+    font-size: 14px; line-height: 1.55; color: #d6dbe8;
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .msg-asked-ai {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; color: #c4b5fd;
+    padding: 1px 7px; border-radius: 5px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.25);
+    margin-left: 4px;
+    font-weight: 600;
+  }
+  .msg.ai {
+    background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.05));
+    border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 14px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .msg.ai::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0;
+    width: 2px; background: var(--grad-ai);
+    box-shadow: 0 0 12px rgba(139,92,246,0.6);
+  }
+  .msg.ai .msg-avatar { background: var(--grad-ai); box-shadow: 0 0 14px rgba(139,92,246,0.55); }
+  .msg.ai .ai-tag {
+    font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    color: #c4b5fd;
+    padding: 2px 7px; border-radius: 5px;
+    background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.3);
+    font-weight: 600;
+  }
+  .msg.ai .msg-text strong { color: #c4b5fd; font-weight: 600; }
+  .msg.ai .msg-text code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+    background: rgba(6,182,212,0.1);
+    border: 1px solid rgba(6,182,212,0.25);
+    color: #67e8f9;
+    padding: 1px 6px; border-radius: 4px;
+  }
+
+  .typing {
+    display: flex; align-items: center; gap: 12px;
+    align-self: stretch;
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 12px; color: var(--text-dim);
+  }
+  .typing-orb {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--grad-ai);
+    box-shadow: 0 0 12px rgba(139,92,246,0.5);
+    animation: orb 1.6s ease-in-out infinite;
+  }
+  @keyframes orb {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); box-shadow: 0 0 18px rgba(139,92,246,0.7); }
+  }
+  .typing-dots { display: flex; gap: 4px; margin-left: auto; }
+  .typing-dots span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #c4b5fd;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+    40% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .input-wrap {
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--border-soft);
+    background: rgba(8, 9, 22, 0.4);
+  }
+  .input-row {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px 8px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-row.ai-mode {
+    border-color: rgba(139,92,246,0.5);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.12), 0 0 20px rgba(139,92,246,0.18);
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));
+  }
+  .input-row:focus-within { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+  .input-row input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: white; font-size: 14px; font-family: inherit;
+    padding: 8px 0;
+  }
+  .input-row input::placeholder { color: var(--text-faint); }
+  .input-mode {
+    display: flex; gap: 2px;
+    background: rgba(20,22,45,0.6);
+    border-radius: 9px; padding: 2px;
+  }
+  .mode-btn {
+    font-size: 11.5px; padding: 6px 10px; border-radius: 7px;
+    cursor: pointer; color: var(--text-dim);
+    border: none; background: transparent; font-weight: 500;
+    font-family: inherit;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .mode-btn.active { background: var(--grad-ai); color: white; box-shadow: 0 0 12px rgba(139,92,246,0.4); }
+  .send-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    border: none; background: var(--grad-ai); color: white; cursor: pointer;
+    display: grid; place-items: center; font-size: 14px;
+    box-shadow: 0 0 16px rgba(139,92,246,0.4);
+  }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  .send-btn:hover:not(:disabled) { transform: translateY(-1px); }
+
+  .notes-pane {
+    background: rgba(8, 9, 22, 0.5);
+    border-left: 1px solid var(--border-soft);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .notes-head {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .notes-head h3 {
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .notes-head h3 .badge {
+    width: 22px; height: 22px; border-radius: 7px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: white;
+    box-shadow: 0 0 12px rgba(139,92,246,0.5);
+  }
+  .organize-btn {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.15));
+    border: 1px solid rgba(139,92,246,0.4);
+    border-radius: 8px;
+    color: #c4b5fd;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .organize-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.22));
+    color: white;
+  }
+  .organize-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .notes-body {
+    flex: 1; overflow-y: auto;
+    padding: 18px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+  .notes-body::-webkit-scrollbar { width: 6px; }
+  .notes-body::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.2); border-radius: 4px; }
+  .notes-body h2 {
+    font-size: 11.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: #c4b5fd; font-weight: 700;
+    margin: 18px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(139,92,246,0.2);
+  }
+  .notes-body h2:first-child { margin-top: 0; }
+  .notes-body ul { list-style: none; padding: 0; margin: 0 0 4px; }
+  .notes-body li {
+    padding: 6px 0 6px 16px;
+    position: relative;
+    color: #d6dbe8;
+  }
+  .notes-body li::before {
+    content: '▸';
+    position: absolute; left: 0; top: 6px;
+    color: rgba(139,92,246,0.6); font-size: 10px;
+  }
+  .notes-body strong { color: white; font-weight: 600; }
+  .notes-empty {
+    text-align: center; padding: 30px 14px;
+    color: var(--text-faint); font-size: 12px;
+    line-height: 1.6;
+  }
+  .notes-empty b { color: var(--text-dim); }
+
+  .notes-meta {
+    padding: 10px 18px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 10.5px;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; justify-content: space-between;
+  }
+
+  /* loading splash */
+  #loading-screen.active {
+    display: grid;
+    place-items: center;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  #loading-screen .logo-mark {
+    margin-bottom: 14px;
+    animation: orb 2s ease-in-out infinite;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(15,17,35,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 12.5px;
+    color: var(--text);
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── settings modal ── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(5, 6, 15, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--bg-2);
+    backdrop-filter: blur(28px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    max-width: 520px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+  .modal::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    opacity: 0.7;
+  }
+  .modal h2 {
+    font-size: 18px; font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .modal p.sub {
+    font-size: 13px; color: var(--text-dim);
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+  .modal p.sub a { color: #c4b5fd; text-decoration: underline; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 28px; height: 28px;
+    background: rgba(15,17,35,0.6);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer; color: var(--text-dim);
+    font-family: inherit; font-size: 14px;
+    display: grid; place-items: center;
+  }
+  .modal-close:hover { color: white; border-color: rgba(239,68,68,0.4); }
+  .key-status {
+    display: flex; align-items: center; gap: 9px;
+    padding: 10px 13px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 9px;
+    font-size: 12.5px;
+    color: #86efac;
+    margin-bottom: 14px;
+  }
+  .key-status.missing { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); color: #fbbf24; }
+  .key-status code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: inherit; }
+
+  .ai-warning-banner {
+    background: rgba(245, 158, 11, 0.08);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+    padding: 10px 22px;
+    font-size: 12.5px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+  }
+  .ai-warning-banner.show { display: flex; }
+  .ai-warning-banner b { color: #fef3c7; }
+  .ai-warning-banner button {
+    margin-left: auto;
+    background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2));
+    border: 1px solid rgba(139,92,246,0.4);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 11.5px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .ai-warning-banner button:hover { background: linear-gradient(135deg, rgba(139,92,246,0.45), rgba(6,182,212,0.3)); }
+
+  /* ────────────────────────────────────────────────────────
+     LANDING SCREEN
+  ──────────────────────────────────────────────────────── */
+  #landing-screen { display: none; overflow-y: auto; }
+  #landing-screen.active { display: block; }
+
+  .land-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 36px;
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(8, 9, 22, 0.7);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+  }
+  .land-nav-cta { display: flex; gap: 10px; align-items: center; }
+  .land-nav-link {
+    font-size: 13px;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 8px 14px;
+    border-radius: 8px;
+  }
+  .land-nav-link:hover { color: white; }
+
+  .hero {
+    padding: 100px 28px 80px;
+    text-align: center;
+    position: relative;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11.5px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #c4b5fd; font-weight: 600;
+    padding: 6px 14px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 999px;
+    margin-bottom: 24px;
+  }
+  .hero-eyebrow .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--violet); box-shadow: 0 0 8px var(--violet);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .hero h1 {
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    max-width: 900px;
+    margin: 0 auto 22px;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(135deg, #c4b5fd 0%, #67e8f9 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-sub {
+    font-size: clamp(15px, 1.6vw, 19px);
+    line-height: 1.55;
+    color: var(--text-dim);
+    max-width: 640px;
+    margin: 0 auto 38px;
+  }
+  .hero-ctas {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn-lg {
+    padding: 14px 24px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+  .hero-meta {
+    margin-top: 26px;
+    font-size: 12px;
+    color: var(--text-faint);
+    display: flex; gap: 18px; justify-content: center; flex-wrap: wrap;
+  }
+  .hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+  .hero-meta .ok { color: #86efac; }
+
+  .hero-visual {
+    max-width: 920px;
+    margin: 60px auto 0;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    backdrop-filter: blur(28px);
+    box-shadow: 0 30px 80px rgba(139, 92, 246, 0.2);
+    position: relative;
+  }
+  .hero-visual::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2));
+    z-index: -1;
+    filter: blur(20px);
+    opacity: 0.6;
+  }
+  .mock-chat {
+    background: rgba(8, 9, 22, 0.6);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    font-size: 13.5px;
+  }
+  .mock-msg { display: flex; gap: 10px; align-items: flex-start; }
+  .mock-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+  .mock-body { flex: 1; }
+  .mock-name { font-size: 11px; font-weight: 600; margin-bottom: 3px; color: var(--text-dim); }
+  .mock-text {
+    background: rgba(20,22,45,0.5);
+    border: 1px solid var(--border-soft);
+    padding: 9px 12px;
+    border-radius: 10px;
+    border-top-left-radius: 3px;
+    color: #d6dbe8;
+    line-height: 1.5;
+  }
+  .mock-msg.ai .mock-text {
+    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.05));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 12px;
+    position: relative;
+  }
+  .mock-msg.ai .mock-text::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 2px;
+    background: var(--grad-ai);
+    box-shadow: 0 0 12px rgba(139,92,246,0.6);
+  }
+  .mock-msg.ai .mock-name {
+    color: #c4b5fd;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .mock-tag {
+    font-size: 9px; letter-spacing: 0.8px; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 4px;
+    background: rgba(139,92,246,0.15);
+    border: 1px solid rgba(139,92,246,0.3);
+    color: #c4b5fd; font-weight: 700;
+  }
+  .mock-text strong { color: #c4b5fd; }
+
+  /* section base */
+  .section {
+    padding: 80px 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-head { text-align: center; margin-bottom: 50px; }
+  .section-eyebrow {
+    display: inline-block;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #c4b5fd; font-weight: 600; margin-bottom: 12px;
+  }
+  .section h2 {
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.8px;
+    margin-bottom: 12px;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .section .sub {
+    font-size: 15px;
+    color: var(--text-dim);
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  /* how it works */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 800px) { .steps { grid-template-columns: 1fr; } }
+  .step {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 24px;
+    position: relative;
+    backdrop-filter: blur(28px);
+  }
+  .step-num {
+    position: absolute; top: -14px; left: 22px;
+    width: 32px; height: 32px;
+    background: var(--grad-ai);
+    border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 700; color: white;
+    box-shadow: 0 0 18px rgba(139,92,246,0.5);
+  }
+  .step h3 {
+    font-size: 16px; font-weight: 600;
+    margin: 8px 0 8px;
+  }
+  .step p {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .step p strong { color: white; font-weight: 500; }
+
+  /* features grid */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 700px) { .features { grid-template-columns: 1fr; } }
+  .feature {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px;
+    backdrop-filter: blur(28px);
+    transition: all 0.2s;
+  }
+  .feature:hover {
+    border-color: rgba(139,92,246,0.4);
+    transform: translateY(-3px);
+  }
+  .feature-icon {
+    width: 42px; height: 42px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(6,182,212,0.08));
+    border: 1px solid rgba(139,92,246,0.3);
+    display: grid; place-items: center;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .feature h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .feature p {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* who-it's-for split */
+  .who {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 800px) { .who { grid-template-columns: 1fr; } }
+  .who-card {
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 32px 28px;
+  }
+  .who-card .who-tag {
+    display: inline-block;
+    font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: #c4b5fd; font-weight: 700;
+    padding: 4px 10px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 6px;
+    margin-bottom: 14px;
+  }
+  .who-card h3 { font-size: 22px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.3px; }
+  .who-card p { font-size: 14px; color: var(--text-dim); line-height: 1.6; margin-bottom: 16px; }
+  .who-card ul {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .who-card li {
+    font-size: 13px;
+    color: #d6dbe8;
+    padding-left: 22px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .who-card li::before {
+    content: '✓';
+    position: absolute; left: 0; top: 0;
+    color: var(--violet);
+    font-weight: 700;
+  }
+
+  /* final cta */
+  .final-cta {
+    text-align: center;
+    padding: 80px 28px 100px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .final-cta h2 {
+    font-size: clamp(30px, 4.5vw, 46px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.8px;
+    margin-bottom: 14px;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .final-cta p {
+    font-size: 15px;
+    color: var(--text-dim);
+    margin-bottom: 30px;
+    line-height: 1.55;
+  }
+
+  .land-footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 26px 28px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+  }
+  .land-footer code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(15,17,35,0.6);
+    padding: 1px 6px; border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── loading splash ── -->
+<div id="loading-screen" class="screen active">
+  <div style="text-align:center;">
+    <div class="logo-mark" style="margin: 0 auto;">S</div>
+    Loading Synapse…
+  </div>
+</div>
+
+<!-- ── landing / homepage ── -->
+<div id="landing-screen" class="screen">
+  <nav class="land-nav">
+    <div class="logo">
+      <div class="logo-mark">S</div>
+      <div><span class="logo-text">Synapse</span><span class="tag">BETA</span></div>
+    </div>
+    <div class="land-nav-cta">
+      <button class="land-nav-link" data-go="login">Log in</button>
+      <button class="btn btn-primary" data-go="signup">Get started →</button>
+    </div>
+  </nav>
+
+  <!-- hero -->
+  <section class="hero">
+    <div class="hero-eyebrow"><span class="pulse"></span>The AI mentor your students actually need</div>
+    <h1>Teach a cohort once.<br>Your AI <span class="accent">never stops teaching.</span></h1>
+    <p class="hero-sub">Synapse turns your group chat into a knowledge base. The AI listens to every message, organizes what's discussed, and answers students 24/7 — grounded only in <em>your</em> conversations, not generic internet knowledge.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary btn-lg" data-go="signup">Start a cohort — free</button>
+      <button class="btn btn-ghost btn-lg" data-go="login">I have an invite code</button>
+    </div>
+    <div class="hero-meta">
+      <span class="ok">●</span> <span>No credit card to start</span>
+      <span>·</span>
+      <span>Runs in 60 seconds</span>
+      <span>·</span>
+      <span>Your data stays yours</span>
+    </div>
+
+    <!-- mock chat visual -->
+    <div class="hero-visual">
+      <div class="mock-chat">
+        <div class="mock-msg">
+          <div class="mock-avatar c-violet">HD</div>
+          <div class="mock-body">
+            <div class="mock-name">Hagay (Professional)</div>
+            <div class="mock-text">My rule for cold Meta testing: $50/day per creative, 48h minimum, kill anything below 1.2% CTR. Max 4 creatives per ad set.</div>
+          </div>
+        </div>
+        <div class="mock-msg">
+          <div class="mock-avatar c-pink">MK</div>
+          <div class="mock-body">
+            <div class="mock-name">Maya · 2 weeks later</div>
+            <div class="mock-text">What was that creative testing rule you shared last month?</div>
+          </div>
+        </div>
+        <div class="mock-msg ai">
+          <div class="mock-avatar c-ai">AI</div>
+          <div class="mock-body">
+            <div class="mock-name">Synapse AI <span class="mock-tag">grounded</span></div>
+            <div class="mock-text"><strong>Hagay's framework</strong>: $50/day per creative, 48h minimum, kill below 1.2% CTR, max 4 creatives per ad set. He arrived at these numbers after burning $8K on over-segmented tests in Q4.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- how it works -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">How it works</div>
+      <h2>Your chat becomes the curriculum</h2>
+      <p class="sub">You don't write a course. You teach the way you already teach — and Synapse turns it into a permanent, queryable mentor.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Create your room</h3>
+        <p>Sign up as a <strong>professional</strong>. Name your cohort, get a 6-character invite code, share it with students. Takes 30 seconds.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Just teach</h3>
+        <p>Drop knowledge in the group chat, answer student questions, share frameworks. The AI is <strong>quietly absorbing everything</strong> in real time.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Students ask the AI</h3>
+        <p>When you're offline, students hit <strong>✨ Ask AI</strong> and get answers in your voice — grounded in your actual messages, with attribution.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- features -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">What it does</div>
+      <h2>Built for cohort-based teaching</h2>
+    </div>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🧠</div>
+        <h3>Grounded answers, not hallucinated ones</h3>
+        <p>The AI is forbidden from making things up. If a topic isn't in your chat, it says so. If it answers, it cites who said what.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📚</div>
+        <h3>Auto-organized knowledge</h3>
+        <p>One click and the AI re-reads the entire chat to produce structured notes — topics, frameworks, open questions, gaps it noticed.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎓</div>
+        <h3>Real cohorts, real invites</h3>
+        <p>Create rooms, share invite codes, see your roster. Students can only access rooms they've been invited to.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">✨</div>
+        <h3>AI in the group chat</h3>
+        <p>Toggle Ask-AI mode and the response appears in the chat so the whole cohort learns together — not just the asker.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔐</div>
+        <h3>Your data, your machine</h3>
+        <p>Synapse runs on your computer with SQLite. No third-party SaaS holding your students' conversations.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Public URL when you want one</h3>
+        <p>One command (<code style="font-family:'JetBrains Mono',monospace;font-size:11.5px;background:rgba(15,17,35,0.6);padding:1px 5px;border-radius:4px;color:#a5b4fc;">npm run tunnel</code>) and your students can join from anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- who it's for -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">Who it's for</div>
+      <h2>Two sides, one room</h2>
+    </div>
+    <div class="who">
+      <div class="who-card">
+        <span class="who-tag">🧑‍🏫 Professionals</span>
+        <h3>Teach what you already know — at scale</h3>
+        <p>You're an expert (ads, design, sales, code, anything). You sell access to your knowledge. Synapse multiplies you — students get 24/7 access to a mentor that knows what <em>you</em> know.</p>
+        <ul>
+          <li>Create unlimited cohorts</li>
+          <li>Share an invite code, not your time</li>
+          <li>See what students are actually asking about</li>
+          <li>One click to summarize the week</li>
+        </ul>
+      </div>
+      <div class="who-card">
+        <span class="who-tag">🎓 Students</span>
+        <h3>A mentor that actually knows your professional</h3>
+        <p>You paid to learn from <em>this specific person</em> — not from a generic AI. Synapse's AI only knows what the professional has shared. Every answer is theirs.</p>
+        <ul>
+          <li>Ask anything, any time</li>
+          <li>See every answer in front of the cohort</li>
+          <li>Cited attribution — know exactly where the knowledge came from</li>
+          <li>The room remembers everything, even weeks later</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- final cta -->
+  <section class="final-cta">
+    <h2>Ready to give your students a 24/7 you?</h2>
+    <p>Sign up as a professional in 30 seconds. Your first cohort is on us. Forever.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary btn-lg" data-go="signup">Create your first room →</button>
+      <button class="btn btn-ghost btn-lg" data-go="login">Log in</button>
+    </div>
+  </section>
+
+  <footer class="land-footer">
+    Synapse v0.2 · runs locally on <code>node ≥22</code> with <code>SQLite</code> + the Anthropic API
+  </footer>
+</div>
+
+<!-- ── auth screen ── -->
+<div id="auth-screen" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-header">
+      <div class="logo">
+        <div class="logo-mark">S</div>
+        <div><span class="logo-text">Synapse</span><span class="tag">BETA</span></div>
+      </div>
+      <h1 style="margin-top:18px;">Learn through your professional's AI</h1>
+      <p>The professional chats, the AI remembers everything,<br>and the students get a 24/7 mentor grounded in real conversations.</p>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Log in</button>
+        <button class="auth-tab" data-tab="signup">Sign up</button>
+      </div>
+
+      <div class="auth-error" id="authError"></div>
+
+      <!-- login form -->
+      <form id="loginForm" class="auth-form">
+        <div class="field">
+          <label class="label">Email</label>
+          <input class="input" type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label class="label">Password</label>
+          <input class="input" type="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn-primary" type="submit" style="width:100%;">Log in</button>
+      </form>
+
+      <!-- signup form -->
+      <form id="signupForm" class="auth-form" style="display:none;">
+        <div class="field">
+          <label class="label">I am a…</label>
+          <div class="role-picker">
+            <button type="button" class="role-card active" data-role="professional">
+              <div class="role-icon">🧑‍🏫</div>
+              <div class="role-title">Professional</div>
+              <div class="role-desc">I want to teach a cohort. I'll create the room.</div>
+            </button>
+            <button type="button" class="role-card" data-role="student">
+              <div class="role-icon">🎓</div>
+              <div class="role-title">Student</div>
+              <div class="role-desc">I have an invite code from a professional.</div>
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Name</label>
+          <input class="input" type="text" name="name" placeholder="Your name" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label class="label">Email</label>
+          <input class="input" type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label class="label">Password</label>
+          <input class="input" type="password" name="password" placeholder="At least 6 characters" autocomplete="new-password" minlength="6" required />
+        </div>
+        <button class="btn btn-primary" type="submit" style="width:100%;">Create account</button>
+      </form>
+    </div>
+
+    <div class="auth-footer">
+      Single-host instance · all data stays on this server
+    </div>
+  </div>
+</div>
+
+<!-- ── rooms screen ── -->
+<div id="rooms-screen" class="screen">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <div class="logo-mark">S</div>
+        <div><span class="logo-text">Synapse</span><span class="tag">BETA</span></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill" id="connStatus1">
+        <span class="dot"></span><span id="connText1">Connected</span>
+      </div>
+      <div class="user-pill" id="userPill1">
+        <div class="user-avatar c-violet" id="userAvatar1">U</div>
+        <div class="user-info">
+          <span class="user-name" id="userName1">User</span>
+          <span class="user-role" id="userRole1">Role</span>
+        </div>
+        <span class="user-caret">▾</span>
+        <div class="menu" id="userMenu1">
+          <div class="menu-item" data-action="settings-1">⚙ Settings</div>
+          <div class="menu-item danger" data-action="logout-1">Log out</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="rooms-main">
+    <div class="rooms-inner">
+      <div class="rooms-header">
+        <h1>Your rooms</h1>
+        <p>Pick a room to enter, create a new one, or join with an invite code.</p>
+      </div>
+
+      <div id="roomsList"></div>
+
+      <div class="action-cards">
+        <div class="action-card" id="createRoomCard">
+          <h3><span class="ico">+</span>Create a room</h3>
+          <p>Professionals only. You'll get an invite code you can share with students.</p>
+          <div class="field">
+            <label class="label">Room name</label>
+            <input class="input" id="newRoomName" placeholder="e.g. Digital Advertising · Cohort 3" />
+          </div>
+          <div class="field">
+            <label class="label">Topic <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-faint);">(optional)</span></label>
+            <input class="input" id="newRoomTopic" placeholder="e.g. Meta ads, Google ads, creative strategy" />
+          </div>
+          <button class="btn btn-primary" id="createRoomBtn" style="width:100%;">Create room</button>
+        </div>
+
+        <div class="action-card">
+          <h3><span class="ico">✦</span>Join with invite code</h3>
+          <p>Got a 6-character code from a professional? Paste it here.</p>
+          <div class="field" style="margin-bottom:14px;">
+            <label class="label">Invite code</label>
+            <input class="input" id="joinCode" placeholder="ABC123" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;" />
+          </div>
+          <button class="btn btn-primary" id="joinRoomBtn" style="width:100%;">Join room</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── chat screen ── -->
+<div id="chat-screen" class="screen">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <div class="logo-mark">S</div>
+        <div><span class="logo-text">Synapse</span><span class="tag">LIVE</span></div>
+      </div>
+      <div class="room-name">
+        <button class="icon-btn" id="backToRooms" style="margin-right:8px;" title="Back to rooms">←</button>
+        <b id="roomNameLabel">Loading…</b>
+        <span class="code" id="inviteCodeChip" title="Click to copy invite code">—</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill" id="connStatus2">
+        <span class="dot"></span><span id="connText2">Connected</span>
+      </div>
+      <div class="user-pill" id="userPill2">
+        <div class="user-avatar c-violet" id="userAvatar2">U</div>
+        <div class="user-info">
+          <span class="user-name" id="userName2">User</span>
+          <span class="user-role" id="userRole2">Role</span>
+        </div>
+        <span class="user-caret">▾</span>
+        <div class="menu" id="userMenu2">
+          <div class="menu-item" data-action="leave-room">Back to rooms</div>
+          <div class="menu-item" data-action="settings-2">⚙ Settings</div>
+          <div class="menu-item danger" data-action="logout-2">Log out</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="ai-warning-banner" id="aiWarningBanner">
+    ⚠ <span><b>AI replies aren't enabled yet.</b> Add your Anthropic API key to start using the assistant.</span>
+    <button data-action="settings-2">Add API key</button>
+  </div>
+
+  <main class="main">
+    <aside class="sidebar">
+      <div class="ai-member">
+        <div class="ai-orb">AI</div>
+        <div class="ai-member-info">
+          <div class="ai-member-name">Synapse AI</div>
+          <div class="ai-member-status">listening · remembers everything</div>
+        </div>
+      </div>
+      <div>
+        <h3>Professional</h3>
+        <div id="membersProf"></div>
+      </div>
+      <div>
+        <h3>Students <span id="studentCount" style="text-transform:none;letter-spacing:0;color:var(--text-faint);">·</span></h3>
+        <div id="membersStud"></div>
+      </div>
+    </aside>
+
+    <section class="chat-pane">
+      <div class="chat-head">
+        <div>
+          <h2 id="chatTitle">#room</h2>
+          <div class="sub">Everything written here is remembered. Ask the AI anything about what's been discussed.</div>
+        </div>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="input-wrap">
+        <div class="input-row" id="inputRow">
+          <div class="input-mode">
+            <button class="mode-btn active" data-mode="chat">💬 Post</button>
+            <button class="mode-btn" data-mode="ai">✨ Ask AI</button>
+          </div>
+          <input type="text" id="msgInput" placeholder="Message the cohort…" autocomplete="off" />
+          <button class="send-btn" id="sendBtn" title="Send (Enter)">↑</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="notes-pane">
+      <div class="notes-head">
+        <h3><span class="badge">AI</span>What the AI knows</h3>
+        <button class="organize-btn" id="organizeBtn">
+          <span id="organizeIcon">⟲</span> <span id="organizeLabel">Organize</span>
+        </button>
+      </div>
+      <div class="notes-body" id="notesBody">
+        <div class="notes-empty">
+          <b>No notes yet.</b><br>
+          Click <b>Organize</b> to have the AI<br>read the chat and structure<br>what's been discussed.
+        </div>
+      </div>
+      <div class="notes-meta">
+        <span id="notesCount">0 messages</span>
+        <span id="notesAge">—</span>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── settings modal ── -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" data-action="close-settings">✕</button>
+    <h2>Settings</h2>
+    <p class="sub">Configure the AI key that powers Synapse. Your key stays on this server — it's never sent anywhere except to Anthropic.</p>
+
+    <div class="key-status missing" id="keyStatus">
+      <span class="dot" style="background:var(--amber);box-shadow:0 0 8px var(--amber);"></span>
+      No API key configured yet
+    </div>
+
+    <div class="field">
+      <label class="label">Anthropic API key</label>
+      <input class="input" id="apiKeyInput" type="password" placeholder="sk-ant-…" autocomplete="off" />
+      <p style="font-size:11px;color:var(--text-faint);margin-top:6px;line-height:1.5;">
+        Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#c4b5fd;">console.anthropic.com/settings/keys</a> — needs a small credit balance to use (typical: fractions of a cent per AI reply).
+      </p>
+    </div>
+
+    <div class="field">
+      <label class="label">Model</label>
+      <select class="input" id="modelSelect" style="appearance:auto;">
+        <option value="claude-sonnet-4-5">Claude Sonnet 4.5 — recommended</option>
+        <option value="claude-opus-4-5">Claude Opus 4.5 — slower, smarter</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — faster, cheaper</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button class="btn btn-primary" id="saveKeyBtn" style="flex:1;">Save & test key</button>
+      <button class="btn btn-ghost" data-action="close-settings">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── state ───
+  let info = {};
+  let user = null;
+  let rooms = [];
+  let currentRoom = null;
+  let members = [];
+  let messages = [];
+  let notes = { content: "", updated_at: 0, message_count: 0 };
+  let mode = "chat";
+  let pollTimer = null;
+
+  const $ = (id) => document.getElementById(id);
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const fmtDay = (ts) => new Date(ts).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  const ago = (ts) => {
+    if (!ts) return "never";
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return s + "s ago";
+    if (s < 3600) return Math.floor(s/60) + "m ago";
+    if (s < 86400) return Math.floor(s/3600) + "h ago";
+    return Math.floor(s/86400) + "d ago";
+  };
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const formatRich = (s) => {
+    let h = escapeHtml(s);
+    h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    h = h.replace(/`([^`]+?)`/g, '<code>$1</code>');
+    return h;
+  };
+  const formatNotes = (md) => {
+    const lines = md.split('\n');
+    let html = ''; let inList = false;
+    for (const line of lines) {
+      const trim = line.trim();
+      if (/^##\s+/.test(trim)) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<h2>${formatRich(trim.replace(/^##\s+/, ''))}</h2>`;
+      } else if (/^[-*]\s+/.test(trim)) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += `<li>${formatRich(trim.replace(/^[-*]\s+/, ''))}</li>`;
+      } else if (trim) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<p>${formatRich(trim)}</p>`;
+      }
+    }
+    if (inList) html += '</ul>';
+    return html;
+  };
+  const initials = (name) => name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+  // ─── api ───
+  async function api(path, opts = {}) {
+    const r = await fetch(path, {
+      ...opts,
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
+    return data;
+  }
+
+  // ─── screen control ───
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+  }
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+  function setAuthError(msg) {
+    const el = $('authError');
+    if (msg) { el.textContent = msg; el.classList.add('show'); }
+    else { el.classList.remove('show'); }
+  }
+
+  // ─── render user pill ───
+  function renderUserPill() {
+    if (!user) return;
+    for (const i of [1, 2]) {
+      const av = $('userAvatar' + i);
+      av.textContent = initials(user.name);
+      av.className = 'user-avatar c-' + (user.color || 'violet');
+      $('userName' + i).textContent = user.name;
+      $('userRole' + i).textContent = user.role === 'professional' ? 'Professional' : 'Student';
+    }
+    // pro-only UI
+    $('createRoomCard').style.display = user.role === 'professional' ? 'block' : 'none';
+  }
+
+  // ─── auth ───
+  document.querySelectorAll('.auth-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.auth-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const tab = t.dataset.tab;
+      $('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+      $('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+      setAuthError('');
+    });
+  });
+
+  document.querySelectorAll('.role-card').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.role-card').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    const fd = new FormData(e.target);
+    try {
+      const r = await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }),
+      });
+      user = r.user;
+      renderUserPill();
+      await loadRooms();
+      show('rooms-screen');
+    } catch (err) {
+      setAuthError(err.message);
+    }
+  });
+
+  $('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    const fd = new FormData(e.target);
+    const role = document.querySelector('.role-card.active')?.dataset.role || 'student';
+    try {
+      const r = await api('/api/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: fd.get('email'),
+          password: fd.get('password'),
+          name: fd.get('name'),
+          role,
+        }),
+      });
+      user = r.user;
+      renderUserPill();
+      await loadRooms();
+      show('rooms-screen');
+    } catch (err) {
+      setAuthError(err.message);
+    }
+  });
+
+  async function logout() {
+    try { await api('/api/auth/logout', { method: 'POST' }); } catch {}
+    user = null;
+    currentRoom = null;
+    if (pollTimer) clearInterval(pollTimer);
+    show('auth-screen');
+  }
+
+  // ─── rooms ───
+  async function loadRooms() {
+    try {
+      const r = await api('/api/rooms');
+      rooms = r.rooms;
+      renderRoomsList();
+    } catch (e) { console.error(e); }
+  }
+
+  function renderRoomsList() {
+    const el = $('roomsList');
+    if (!rooms.length) {
+      el.innerHTML = `<div class="empty-state">No rooms yet. ${user.role === 'professional' ? 'Create your first cohort below.' : 'Ask your professional for an invite code.'}</div>`;
+      return;
+    }
+    el.innerHTML = `<div class="rooms-grid">${rooms.map(r => `
+      <button class="room-card" data-id="${r.id}">
+        <div class="room-name">${escapeHtml(r.name)}</div>
+        ${r.topic ? `<div class="room-topic">${escapeHtml(r.topic)}</div>` : ''}
+        <div class="room-meta">
+          <span class="meta-item">👥 ${r.member_count} member${r.member_count === 1 ? '' : 's'}</span>
+          <span class="meta-item" style="font-family:'JetBrains Mono',monospace;">${r.invite_code}</span>
+        </div>
+      </button>
+    `).join('')}</div>`;
+    document.querySelectorAll('.room-card').forEach(card => {
+      card.addEventListener('click', () => enterRoom(parseInt(card.dataset.id, 10)));
+    });
+  }
+
+  $('createRoomBtn').addEventListener('click', async () => {
+    const name = $('newRoomName').value.trim();
+    const topic = $('newRoomTopic').value.trim();
+    if (!name) return toast('Room name required');
+    try {
+      const r = await api('/api/rooms', { method: 'POST', body: JSON.stringify({ name, topic }) });
+      $('newRoomName').value = ''; $('newRoomTopic').value = '';
+      await loadRooms();
+      enterRoom(r.room.id);
+    } catch (e) { toast(e.message); }
+  });
+
+  $('joinRoomBtn').addEventListener('click', async () => {
+    const code = $('joinCode').value.trim().toUpperCase();
+    if (!code) return toast('Invite code required');
+    try {
+      const r = await api('/api/rooms/join', { method: 'POST', body: JSON.stringify({ code }) });
+      $('joinCode').value = '';
+      await loadRooms();
+      enterRoom(r.room.id);
+    } catch (e) { toast(e.message); }
+  });
+
+  // ─── chat ───
+  async function enterRoom(roomId) {
+    try {
+      const r = await api('/api/rooms/' + roomId);
+      currentRoom = r.room;
+      members = r.members;
+      await loadMessages();
+      await loadNotes();
+      renderRoomHeader();
+      renderMembers();
+      renderMessages();
+      renderNotes();
+      show('chat-screen');
+      $('msgInput').focus();
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(pollMessages, 4000);
+    } catch (e) { toast(e.message); }
+  }
+
+  function leaveRoom() {
+    if (pollTimer) clearInterval(pollTimer);
+    currentRoom = null;
+    loadRooms();
+    show('rooms-screen');
+  }
+
+  function renderRoomHeader() {
+    $('roomNameLabel').textContent = currentRoom.name;
+    $('inviteCodeChip').textContent = currentRoom.invite_code;
+    $('chatTitle').textContent = '# ' + currentRoom.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function renderMembers() {
+    const prof = members.filter(m => m.role === 'professional');
+    const stud = members.filter(m => m.role === 'student');
+    $('studentCount').textContent = '· ' + stud.length;
+    $('membersProf').innerHTML = prof.map(m => `
+      <div class="member ${user?.id === m.id ? 'me' : ''} prof">
+        <div class="member-avatar c-${m.color}">${initials(m.name)}</div>
+        <span class="member-name">${escapeHtml(m.name)}</span>
+        <span class="member-role">Pro</span>
+      </div>`).join('');
+    $('membersStud').innerHTML = stud.length ? stud.map(m => `
+      <div class="member ${user?.id === m.id ? 'me' : ''}">
+        <div class="member-avatar c-${m.color}">${initials(m.name)}</div>
+        <span class="member-name">${escapeHtml(m.name)}</span>
+      </div>`).join('') : `<div style="padding:8px;font-size:11.5px;color:var(--text-faint);">Share the invite code to get students in.</div>`;
+  }
+
+  async function loadMessages() {
+    const r = await api('/api/rooms/' + currentRoom.id + '/messages');
+    messages = r.messages;
+  }
+
+  async function loadNotes() {
+    const r = await api('/api/rooms/' + currentRoom.id + '/notes');
+    notes = r.notes;
+  }
+
+  async function pollMessages() {
+    if (!currentRoom) return;
+    try {
+      const r = await api('/api/rooms/' + currentRoom.id + '/messages');
+      if (r.messages.length !== messages.length) {
+        messages = r.messages;
+        renderMessages();
+        renderNotes();
+      }
+    } catch {}
+  }
+
+  function renderMessages() {
+    const el = $('messages');
+    if (!messages.length) {
+      el.innerHTML = `<div class="notes-empty" style="margin:auto;"><b>No messages yet.</b><br>${user.role === 'professional' ? 'Kick off the class — share something your students should learn.' : 'Waiting for the professional to start the class.'}</div>`;
+      return;
+    }
+    const memberMap = new Map(members.map(m => [m.id, m]));
+    let html = ''; let lastDay = '';
+    for (const m of messages) {
+      const day = fmtDay(m.ts);
+      if (day !== lastDay) {
+        html += `<div class="day-divider">${day}</div>`;
+        lastDay = day;
+      }
+      if (m.type === 'ai') {
+        const askedBy = memberMap.get(m.asked_by);
+        html += `
+          <div class="msg ai">
+            <div class="msg-avatar">AI</div>
+            <div class="msg-body">
+              <div class="msg-meta">
+                <span class="msg-name">Synapse AI</span>
+                <span class="ai-tag">grounded in ${m.grounded_in || messages.length} msgs</span>
+                ${askedBy ? `<span style="font-size:11px;color:var(--text-faint);">answering ${escapeHtml(askedBy.name)}</span>` : ''}
+                <span class="msg-time" style="margin-left:auto;">${fmtTime(m.ts)}</span>
+              </div>
+              <div class="msg-text">${formatRich(m.content)}</div>
+            </div>
+          </div>`;
+      } else {
+        const author = memberMap.get(m.author_id);
+        const color = author?.color || 'violet';
+        const name = author?.name || 'Unknown';
+        const role = author?.role;
+        html += `
+          <div class="msg">
+            <div class="msg-avatar c-${color}">${initials(name)}</div>
+            <div class="msg-body">
+              <div class="msg-meta">
+                <span class="msg-name">${escapeHtml(name)}${m.author_id === user.id ? ' (you)' : ''}</span>
+                ${role === 'professional' ? '<span class="msg-role-tag prof">Professional</span>' : ''}
+                ${m.asked_ai ? '<span class="msg-asked-ai">✨ asked AI</span>' : ''}
+                <span class="msg-time" style="margin-left:auto;">${fmtTime(m.ts)}</span>
+              </div>
+              <div class="msg-text">${escapeHtml(m.content)}</div>
+            </div>
+          </div>`;
+      }
+    }
+    el.innerHTML = html;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function renderNotes() {
+    const el = $('notesBody');
+    if (!notes.content || notes.message_count === 0) {
+      el.innerHTML = `<div class="notes-empty">
+        <b>No notes yet.</b><br>
+        Click <b>Organize</b> to have the AI<br>read the chat and structure<br>what's been discussed.
+      </div>`;
+    } else {
+      el.innerHTML = formatNotes(notes.content);
+    }
+    $('notesCount').textContent = `${messages.length} message${messages.length === 1 ? '' : 's'}`;
+    $('notesAge').textContent = notes.updated_at ? `notes ${ago(notes.updated_at)}` : 'not organized yet';
+  }
+
+  function showTyping() {
+    const el = $('messages');
+    if (document.getElementById('typing')) return;
+    const t = document.createElement('div');
+    t.id = 'typing';
+    t.className = 'typing';
+    t.innerHTML = `<div class="typing-orb"></div> Synapse AI is reading the chat… <div class="typing-dots"><span></span><span></span><span></span></div>`;
+    el.appendChild(t);
+    el.scrollTop = el.scrollHeight;
+  }
+  function hideTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  // ─── send ───
+  async function send() {
+    const input = $('msgInput');
+    const text = input.value.trim();
+    if (!text || !currentRoom) return;
+    input.value = '';
+    $('sendBtn').disabled = true; input.disabled = true;
+
+    if (mode === 'ai') {
+      // optimistic show
+      messages.push({ id: -1, room_id: currentRoom.id, author_id: user.id, type: 'human', content: text, asked_ai: 1, ts: Date.now() });
+      renderMessages();
+      showTyping();
+      try {
+        await api('/api/rooms/' + currentRoom.id + '/ask', {
+          method: 'POST',
+          body: JSON.stringify({ question: text }),
+        });
+        await loadMessages();
+        await loadNotes();
+        hideTyping();
+        renderMessages();
+        renderNotes();
+      } catch (err) {
+        hideTyping();
+        messages = messages.filter(m => m.id !== -1);
+        messages.push({ id: -2, type: 'ai', content: '⚠ ' + err.message, ts: Date.now(), grounded_in: 0 });
+        renderMessages();
+      }
+    } else {
+      try {
+        await api('/api/rooms/' + currentRoom.id + '/messages', {
+          method: 'POST',
+          body: JSON.stringify({ content: text }),
+        });
+        await loadMessages();
+        renderMessages();
+        renderNotes();
+      } catch (err) { toast(err.message); }
+    }
+    $('sendBtn').disabled = false; input.disabled = false;
+    input.focus();
+  }
+
+  async function organize() {
+    if (!currentRoom) return;
+    const btn = $('organizeBtn');
+    btn.disabled = true;
+    $('organizeIcon').textContent = '⟳';
+    $('organizeLabel').textContent = 'Reading chat…';
+    try {
+      const r = await api('/api/rooms/' + currentRoom.id + '/organize', { method: 'POST' });
+      notes = r.notes;
+      renderNotes();
+    } catch (e) { toast(e.message); }
+    btn.disabled = false;
+    $('organizeIcon').textContent = '⟲';
+    $('organizeLabel').textContent = 'Organize';
+  }
+
+  // ─── wire up chat events ───
+  $('sendBtn').addEventListener('click', send);
+  $('msgInput').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+  $('organizeBtn').addEventListener('click', organize);
+  $('backToRooms').addEventListener('click', leaveRoom);
+
+  $('inviteCodeChip').addEventListener('click', () => {
+    if (!currentRoom) return;
+    navigator.clipboard.writeText(currentRoom.invite_code).then(() => toast('Invite code copied'));
+  });
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      const input = $('msgInput');
+      if (mode === 'ai') {
+        input.placeholder = 'Ask the AI in front of the class — it answers using everything written here…';
+        $('inputRow').classList.add('ai-mode');
+      } else {
+        input.placeholder = user?.role === 'professional' ? 'Share with your cohort…' : 'Message the class…';
+        $('inputRow').classList.remove('ai-mode');
+      }
+      input.focus();
+    });
+  });
+
+  // user menus
+  function bindMenu(pillId, menuId) {
+    $(pillId).addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.menu').forEach(m => m.classList.remove('open'));
+      $(menuId).classList.toggle('open');
+    });
+  }
+  bindMenu('userPill1', 'userMenu1');
+  bindMenu('userPill2', 'userMenu2');
+  document.addEventListener('click', () => document.querySelectorAll('.menu').forEach(m => m.classList.remove('open')));
+  document.querySelectorAll('[data-action]').forEach(el => {
+    el.addEventListener('click', () => {
+      const a = el.dataset.action;
+      if (a === 'logout-1' || a === 'logout-2') logout();
+      if (a === 'leave-room') leaveRoom();
+      if (a === 'settings-1' || a === 'settings-2') openSettings();
+      if (a === 'close-settings') closeSettings();
+    });
+  });
+
+  // ─── settings modal ───
+  async function openSettings() {
+    document.querySelectorAll('.menu').forEach(m => m.classList.remove('open'));
+    try {
+      const s = await api('/api/settings');
+      const status = $('keyStatus');
+      if (s.apiKeyConfigured) {
+        status.className = 'key-status';
+        status.innerHTML = `<span class="dot"></span> Connected to Anthropic · <code>${s.apiKeyPreview}</code>`;
+        $('apiKeyInput').placeholder = 'sk-ant-… (paste a new key to replace)';
+      } else {
+        status.className = 'key-status missing';
+        status.innerHTML = `<span class="dot" style="background:var(--amber);box-shadow:0 0 8px var(--amber);"></span> No API key configured yet`;
+        $('apiKeyInput').placeholder = 'sk-ant-…';
+      }
+      $('modelSelect').value = s.model;
+      $('apiKeyInput').value = '';
+    } catch (e) { toast(e.message); }
+    $('settingsModal').classList.add('open');
+    setTimeout(() => $('apiKeyInput').focus(), 50);
+  }
+  function closeSettings() {
+    $('settingsModal').classList.remove('open');
+  }
+  $('settingsModal').addEventListener('click', (e) => {
+    if (e.target.id === 'settingsModal') closeSettings();
+  });
+  $('saveKeyBtn').addEventListener('click', async () => {
+    const key = $('apiKeyInput').value.trim();
+    const model = $('modelSelect').value;
+    const btn = $('saveKeyBtn');
+    const oldLabel = btn.textContent;
+
+    btn.disabled = true;
+    btn.textContent = 'Saving model…';
+    try {
+      await api('/api/settings/model', { method: 'POST', body: JSON.stringify({ model }) });
+    } catch (e) { /* swallow */ }
+
+    if (key) {
+      btn.textContent = 'Testing key with Anthropic…';
+      try {
+        await api('/api/settings/api-key', { method: 'POST', body: JSON.stringify({ key }) });
+        toast('API key saved — AI replies are live');
+        await refreshInfo();
+        closeSettings();
+      } catch (e) {
+        toast(e.message);
+      }
+    } else {
+      toast('Settings saved');
+      await refreshInfo();
+      closeSettings();
+    }
+    btn.disabled = false;
+    btn.textContent = oldLabel;
+  });
+
+  async function refreshInfo() {
+    try {
+      info = await api('/api/info');
+      for (const i of [1, 2]) {
+        const pill = $('connStatus' + i);
+        if (info.apiKeyConfigured) {
+          pill.classList.remove('warn');
+          $('connText' + i).textContent = info.model;
+        } else {
+          pill.classList.add('warn');
+          $('connText' + i).textContent = 'No API key';
+        }
+      }
+      $('aiWarningBanner').classList.toggle('show', !info.apiKeyConfigured);
+    } catch {}
+  }
+
+  // ─── landing → auth navigation ───
+  function gotoAuth(tab) {
+    show('auth-screen');
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    $('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    $('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+    setAuthError('');
+    // focus first input
+    setTimeout(() => {
+      const f = tab === 'login' ? $('loginForm') : $('signupForm');
+      const input = f.querySelector('input');
+      if (input) input.focus();
+    }, 50);
+  }
+  document.querySelectorAll('[data-go]').forEach(el => {
+    el.addEventListener('click', () => gotoAuth(el.dataset.go));
+  });
+
+  // ─── boot ───
+  async function boot() {
+    await refreshInfo();
+
+    try {
+      const r = await api('/api/auth/me');
+      if (r.user) {
+        user = r.user;
+        renderUserPill();
+        await loadRooms();
+        show('rooms-screen');
+      } else {
+        show('landing-screen');
+      }
+    } catch {
+      show('landing-screen');
+    }
+  }
+
+  boot();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Netlify is OPTIONAL. The simplest setup is: the Node server (server.js) serves
+# both the pages and the API from one address (Cloudflare tunnel, Render, Fly…).
+#
+# If you do host the pages on Netlify, only the public/ folder is published —
+# never the server code, .env or the database — and you must tell the pages where
+# the API lives by adding, in each HTML file before config.js:
+#   <script>window.MAVEN_API_OVERRIDE = "https://your-backend.example.com";</script>
+# and run the server with ALLOWED_ORIGINS=https://your-site.netlify.app CROSS_ORIGIN=true
+
+[build]
+  publish = "public"
+  command = "echo 'Static deploy — no build needed'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "public, max-age=60, must-revalidate"

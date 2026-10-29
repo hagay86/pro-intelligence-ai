@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maven — הצ'אט החכם</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-2: #f8fafc;
+  --bg-3: #f1f5f9;
+  --text: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --text-4: #cbd5e1;
+  --border: #e2e8f0;
+  --border-2: #cbd5e1;
+  --indigo: #4f46e5;
+  --indigo-2: #4338ca;
+  --indigo-soft: #eef2ff;
+  --indigo-line: #c7d2fe;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 24px 60px rgba(15, 23, 42, 0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); height: 100vh; overflow: hidden; }
+body {
+  font-family: 'Heebo', 'Inter', -apple-system, sans-serif;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 64px 320px 1fr 340px;
+  height: 100vh;
+}
+@media (max-width: 1200px) { .app-shell { grid-template-columns: 56px 280px 1fr 300px; } }
+@media (max-width: 1024px) { .app-shell { grid-template-columns: 56px 260px 1fr; } .app-right { display: none; } }
+@media (max-width: 768px)  { .app-shell { grid-template-columns: 1fr; } .app-nav, .app-rooms, .app-right { display: none; } }
+
+/* nav rail */
+.app-nav {
+  background: #0f172a;
+  color: white;
+  padding: 16px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.logo-mark {
+  width: 38px; height: 38px; border-radius: 9px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  position: relative;
+  display: grid; place-items: center;
+  color: white; font-weight: 800; font-size: 17px;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+.logo-mark::after {
+  content: ''; position: absolute; top: 5px; right: 5px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: white;
+}
+.nav-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: grid; place-items: center;
+  color: rgba(255,255,255,0.6); font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent; border: none; font-family: inherit;
+}
+.nav-icon:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-icon.active {
+  background: rgba(79,70,229,0.25); color: white;
+  box-shadow: inset 0 0 0 1px rgba(79,70,229,0.5);
+}
+.nav-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+
+/* rooms */
+.app-rooms {
+  background: var(--bg-2);
+  border-inline-end: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.rooms-head {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.rooms-title { font-size: 16px; font-weight: 800; }
+.rooms-list { flex: 1; overflow-y: auto; padding: 8px; }
+.room {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+.room:hover { background: var(--bg-3); }
+.room.active {
+  background: var(--bg);
+  box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+}
+.room-info { flex: 1; min-width: 0; }
+.room-name { font-size: 14px; font-weight: 600; }
+.room-meta { font-size: 11.5px; color: var(--text-3); }
+
+/* avatars */
+.avatar {
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 700; color: white;
+  flex-shrink: 0;
+  user-select: none;
+}
+.avatar.xs { width: 22px; height: 22px; font-size: 9px; }
+.avatar.sm { width: 28px; height: 28px; font-size: 10.5px; }
+.avatar.md { width: 36px; height: 36px; font-size: 12.5px; }
+.avatar.lg { width: 48px; height: 48px; font-size: 15px; }
+.c-indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.c-violet { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.c-rose   { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+.c-emerald{ background: linear-gradient(135deg, #10b981, #059669); }
+.c-amber  { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.c-sky    { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.c-pink   { background: linear-gradient(135deg, #ec4899, #db2777); }
+.c-teal   { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.c-ai     { background: linear-gradient(135deg, #4f46e5, #06b6d4); }
+
+/* chat */
+.app-chat {
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.chat-head {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg);
+}
+.chat-head-left { display: flex; align-items: center; gap: 12px; }
+.chat-head-title { font-size: 15.5px; font-weight: 700; }
+.chat-head-sub { font-size: 12px; color: var(--text-2); }
+.head-icon {
+  width: 36px; height: 36px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid; place-items: center;
+  color: var(--text-2);
+  font-size: 16px;
+  font-family: inherit;
+}
+.head-icon:hover { background: var(--bg-2); color: var(--text); }
+
+.identity-pill {
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 12px 5px 5px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12.5px;
+  cursor: pointer;
+  position: relative;
+}
+.identity-pill:hover { border-color: var(--indigo); }
+.identity-info { display: flex; flex-direction: column; gap: 1px; line-height: 1; }
+.identity-name { font-weight: 600; font-size: 12.5px; }
+.identity-role { font-size: 9.5px; color: var(--text-3); }
+.identity-caret { color: var(--text-3); font-size: 10px; }
+
+.menu {
+  position: absolute; top: 100%; inset-inline-end: 0; margin-top: 6px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 5px;
+  min-width: 220px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  display: none;
+}
+.menu.open { display: block; }
+.menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.menu-item:hover { background: var(--bg-2); }
+.menu-item.current { background: var(--indigo-soft); }
+.menu-item .check { margin-inline-start: auto; color: var(--indigo); opacity: 0; font-size: 12px; }
+.menu-item.current .check { opacity: 1; }
+.menu-divider { height: 1px; background: var(--border); margin: 4px 6px; }
+
+.messages {
+  flex: 1; overflow-y: auto;
+  padding: 20px 24px;
+  display: flex; flex-direction: column;
+  gap: 4px;
+  background: var(--bg-2);
+}
+.day-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0 8px;
+  color: var(--text-3);
+  font-size: 11.5px; font-weight: 600;
+}
+.day-divider::before, .day-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.msg { display: flex; gap: 11px; padding: 4px 0; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+.msg-body { flex: 1; min-width: 0; }
+.msg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.msg-name { font-size: 13.5px; font-weight: 700; }
+.msg-tag {
+  font-size: 10px; padding: 1px 6px; border-radius: 4px;
+  background: var(--indigo-soft); color: var(--indigo);
+  font-weight: 700;
+}
+.msg-tag.asked-ai {
+  background: #fef3c7; color: #92400e;
+}
+.msg-time { font-size: 11px; color: var(--text-3); margin-inline-start: auto; }
+.msg-bubble {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  border-top-right-radius: 3px;
+  padding: 10px 14px;
+  font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+  max-width: 760px;
+  white-space: pre-wrap; word-wrap: break-word;
+}
+.msg.you .msg-bubble {
+  background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+  border-color: var(--indigo-line);
+}
+.msg.ai {
+  background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+  border: 1px solid var(--indigo-line);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin: 8px 0;
+  position: relative;
+}
+.msg.ai::before {
+  content: '';
+  position: absolute;
+  top: 0; inset-inline-start: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #4f46e5, #7c3aed);
+  border-radius: 2px;
+}
+.msg.ai .msg-bubble {
+  background: transparent; border: none; padding: 0;
+  border-radius: 0; max-width: none;
+}
+.msg.ai .msg-bubble strong { color: var(--indigo); }
+.msg.ai .msg-bubble code {
+  font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+  background: var(--bg);
+  border: 1px solid var(--indigo-line);
+  padding: 1px 5px; border-radius: 4px;
+  color: var(--indigo);
+}
+
+.typing {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: var(--indigo-soft);
+  border: 1px solid var(--indigo-line);
+  border-radius: 14px;
+  width: fit-content;
+  color: var(--indigo);
+  font-size: 13px; font-weight: 500;
+  margin: 8px 0;
+}
+.typing-dots { display: flex; gap: 4px; margin-inline-start: 6px; }
+.typing-dots span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--indigo);
+  animation: bounce 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-3px); opacity: 1; } }
+
+.composer {
+  padding: 14px 22px 18px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+.composer-row {
+  display: flex; gap: 10px; align-items: center;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px 14px 6px 8px;
+  transition: all 0.15s;
+}
+.composer-row:focus-within {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px var(--indigo-soft);
+  background: var(--bg);
+}
+.composer-row.ai-mode {
+  background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+}
+.composer-row input {
+  flex: 1;
+  background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 14px;
+  font-family: inherit;
+  padding: 8px 0;
+}
+.composer-mode {
+  display: flex; gap: 2px;
+  background: var(--bg);
+  border-radius: 9px;
+  padding: 2px;
+  border: 1px solid var(--border);
+}
+.mode-btn {
+  padding: 6px 10px;
+  font-size: 12px; font-weight: 600;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-2);
+  display: flex; align-items: center; gap: 5px;
+}
+.mode-btn.active {
+  background: var(--indigo);
+  color: white;
+}
+.send-btn {
+  width: 36px; height: 36px;
+  background: var(--indigo);
+  border: none;
+  border-radius: 9px;
+  color: white;
+  cursor: pointer;
+  display: grid; place-items: center;
+  font-size: 16px;
+}
+.send-btn:hover { background: var(--indigo-2); }
+
+/* right panel */
+.app-right {
+  background: var(--bg-2);
+  border-inline-start: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.ai-hero {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border-radius: 12px;
+  padding: 16px;
+}
+.ai-hero-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ai-hero-orb {
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 9px;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 800;
+}
+.ai-hero-title { font-size: 14px; font-weight: 700; }
+.ai-hero-sub { font-size: 11.5px; opacity: 0.85; }
+.ai-hero p {
+  font-size: 12.5px; line-height: 1.6;
+  margin-bottom: 12px; opacity: 0.94;
+}
+.ai-hero-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ai-hero-stat {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+.ai-hero-stat-num { font-size: 16px; font-weight: 800; }
+.ai-hero-stat-label { font-size: 10px; opacity: 0.78; }
+
+.side-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.side-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.side-card-title {
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.side-card-title .ico {
+  width: 20px; height: 20px;
+  background: var(--indigo-soft);
+  border-radius: 5px;
+  display: grid; place-items: center;
+  font-size: 11px;
+  color: var(--indigo);
+  font-weight: 800;
+}
+.quick-action {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid transparent;
+  font-family: inherit;
+  width: 100%;
+  text-align: right;
+}
+.quick-action:hover { background: var(--bg-2); color: var(--text); border-color: var(--border); }
+.quick-action .ico { font-size: 15px; width: 20px; text-align: center; }
+
+.member-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.member-row:hover { background: var(--bg-2); }
+.member-name { font-size: 12.5px; font-weight: 500; }
+.member-status { font-size: 10px; color: var(--text-3); }
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-inline-start: auto;
+}
+.pill-indigo { background: var(--indigo-soft); color: var(--indigo); }
+
+.notes-content { font-size: 12.5px; line-height: 1.65; color: var(--text); }
+.notes-content h5 {
+  font-size: 10.5px; color: var(--indigo); font-weight: 700;
+  margin: 10px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--indigo-line);
+}
+.notes-content h5:first-child { margin-top: 0; }
+.notes-content ul { list-style: none; padding: 0; margin: 0 0 4px; }
+.notes-content li {
+  padding: 3px 0 3px 14px;
+  position: relative;
+  color: var(--text-2);
+}
+.notes-content li::before {
+  content: '▸';
+  position: absolute; inset-inline-start: 0;
+  color: var(--indigo);
+  font-size: 9px;
+  top: 4px;
+}
+
+/* modal */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--bg);
+  border-radius: 18px;
+  padding: 32px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+}
+.modal-close {
+  position: absolute; top: 16px; inset-inline-end: 16px;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  cursor: pointer; font-family: inherit; font-size: 16px;
+  color: var(--text-2);
+}
+.modal h2 {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+.modal > p {
+  font-size: 14.5px; color: var(--text-2);
+  line-height: 1.65; margin-bottom: 22px;
+}
+
+.field { margin-bottom: 14px; }
+.label {
+  display: block;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+.input {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 14.5px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input::placeholder { color: var(--text-3); }
+.input:focus {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px var(--indigo-soft);
+}
+.help {
+  font-size: 12px; color: var(--text-3);
+  margin-top: 6px; line-height: 1.55;
+}
+.help a { color: var(--indigo); }
+
+.btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: var(--indigo);
+  color: white;
+}
+.btn-primary:hover { background: var(--indigo-2); }
+.btn-secondary {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border-2);
+}
+.btn-secondary:hover { background: var(--bg-2); }
+.btn-lg { padding: 13px 22px; font-size: 14.5px; }
+.btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+.key-status {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 13px;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: #047857;
+  margin-bottom: 14px;
+}
+.key-status.missing { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+.key-status .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor;
+}
+
+.danger-zone {
+  margin-top: 18px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px; inset-inline-start: 50%;
+  transform: translateX(50%) translateY(20px);
+  background: var(--text);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(50%) translateY(0); }
+
+/* welcome banner */
+.welcome-banner {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-bottom: 1px solid #fbbf24;
+  padding: 11px 22px;
+  font-size: 13px;
+  color: #78350f;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.welcome-banner b { color: #451a03; }
+.welcome-banner button {
+  margin-inline-start: auto;
+  background: white;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.welcome-banner button:hover { background: #fffbeb; }
+.welcome-banner.hide { display: none; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- nav rail -->
+  <aside class="app-nav">
+    <div class="logo-mark">M</div>
+    <button class="nav-icon active" title="קהילות">💬</button>
+    <button class="nav-icon" title="חיפוש">🔍</button>
+    <div class="nav-bottom">
+      <button class="nav-icon" id="settingsBtn" title="הגדרות">⚙</button>
+      <button class="nav-icon avatar md c-indigo" id="meAvatar" title="אני">חד</button>
+    </div>
+  </aside>
+
+  <!-- rooms list (single room for this single-file version) -->
+  <aside class="app-rooms">
+    <div class="rooms-head">
+      <div class="rooms-title">הקהילות שלי</div>
+    </div>
+    <div class="rooms-list">
+      <div class="room active">
+        <div class="avatar md c-indigo">פד</div>
+        <div class="room-info">
+          <div class="room-name">פרסום דיגיטלי</div>
+          <div class="room-meta">חגי · 6 חברים</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- chat -->
+  <main class="app-chat">
+    <div class="chat-head">
+      <div class="chat-head-left">
+        <div class="avatar md c-indigo">פד</div>
+        <div>
+          <div class="chat-head-title">פרסום דיגיטלי</div>
+          <div class="chat-head-sub" id="chatSub">חגי דרדיק · 6 חברים</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <div class="identity-pill" id="identityPill">
+          <div class="avatar sm c-indigo" id="meAvatarPill">חד</div>
+          <div class="identity-info">
+            <span class="identity-name" id="meName">חגי</span>
+            <span class="identity-role" id="meRole">מורה</span>
+          </div>
+          <span class="identity-caret">▾</span>
+          <div class="menu" id="identityMenu"></div>
+        </div>
+        <button class="head-icon" id="resetBtn" title="אפס שיחה">↺</button>
+      </div>
+    </div>
+
+    <div class="welcome-banner" id="welcomeBanner">
+      <span>👋 <b>ברוך הבא ל-Maven.</b> זה דמו שלם בקובץ אחד. הכל נשמר אצלך בדפדפן. תרצה תשובות AI אמיתיות? פתח <b>הגדרות</b> והכנס מפתח Claude API.</span>
+      <button id="closeBanner">הבנתי</button>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <div class="composer-row" id="composerRow">
+        <div class="composer-mode">
+          <button class="mode-btn active" data-mode="chat">💬 צ'אט</button>
+          <button class="mode-btn" data-mode="ai">✨ שאל AI</button>
+        </div>
+        <input type="text" id="composerInput" placeholder="הודעה לקהילה…" autocomplete="off" />
+        <button class="send-btn" id="sendBtn" title="שלח">↑</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- right panel -->
+  <aside class="app-right">
+    <div class="ai-hero">
+      <div class="ai-hero-head">
+        <div class="ai-hero-orb">AI</div>
+        <div>
+          <div class="ai-hero-title">Maven AI</div>
+          <div class="ai-hero-sub" id="aiHeroSub">מקשיב לקהילה</div>
+        </div>
+      </div>
+      <p>ה-AI של הקהילה לומד מכל הודעה ועונה בקול שלך. במצב הזה משתמש בתשובות מתוסקרות; הכנס מפתח Claude בהגדרות לתשובות אמיתיות.</p>
+      <div class="ai-hero-stats">
+        <div class="ai-hero-stat">
+          <div class="ai-hero-stat-num" id="statMessages">0</div>
+          <div class="ai-hero-stat-label">הודעות בזיכרון</div>
+        </div>
+        <div class="ai-hero-stat">
+          <div class="ai-hero-stat-num" id="statQuestions">0</div>
+          <div class="ai-hero-stat-label">שאלות נענו</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-card-head">
+        <div class="side-card-title"><div class="ico">⚡</div>פעולות מהירות</div>
+      </div>
+      <button class="quick-action" id="organizeBtn"><span class="ico">📊</span><span>סכם את הקהילה</span></button>
+      <button class="quick-action" id="settingsBtn2"><span class="ico">⚙</span><span>הגדרות (חבר Claude)</span></button>
+      <button class="quick-action" id="resetBtn2"><span class="ico">↺</span><span>אפס את השיחה</span></button>
+    </div>
+
+    <div class="side-card">
+      <div class="side-card-head">
+        <div class="side-card-title"><div class="ico">🧠</div>מה ה-AI יודע</div>
+      </div>
+      <div class="notes-content" id="notesContent">
+        <p style="color:var(--text-3);font-size:12px;line-height:1.6;">לחץ <b>סכם את הקהילה</b> כדי שה-AI יקרא את כל הצ'אט ויפיק סיכום מובנה.</p>
+      </div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-card-head">
+        <div class="side-card-title"><div class="ico">👥</div>חברים</div>
+      </div>
+      <div id="membersList"></div>
+    </div>
+  </aside>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" id="closeSettings">✕</button>
+    <h2>הגדרות</h2>
+    <p>תשובות ה-AI כברירת מחדל הן מתוסקרות (canned) — מבוססות על מילות מפתח. לקבלת תשובות Claude אמיתיות, הכנס כאן את מפתח ה-API שלך.</p>
+
+    <div class="key-status missing" id="keyStatus">
+      <span class="dot"></span>
+      תשובות AI: <strong style="margin-inline-start:4px;">מתוסקרות (ברירת מחדל)</strong>
+    </div>
+
+    <div class="field">
+      <label class="label">מפתח Anthropic API (אופציונלי)</label>
+      <input class="input" id="apiKeyInput" type="password" placeholder="sk-ant-…" autocomplete="off" />
+      <p class="help">קבל מפתח ב-<a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com/settings/keys</a>. דורש קרדיט קטן (סנטים בודדים להודעה). המפתח נשמר רק בדפדפן שלך.</p>
+    </div>
+
+    <div class="field">
+      <label class="label">דגם</label>
+      <select class="input" id="modelSelect" style="appearance:auto;">
+        <option value="claude-sonnet-4-5">Claude Sonnet 4.5 — מומלץ</option>
+        <option value="claude-opus-4-5">Claude Opus 4.5 — חכם יותר</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — מהיר וזול</option>
+      </select>
+    </div>
+
+    <div class="danger-zone">
+      <label class="label" style="color:#dc2626;">איפוס הכל</label>
+      <button class="btn btn-secondary" id="clearKeyBtn" style="width:100%;margin-bottom:8px;">מחק את ה-API key</button>
+      <button class="btn btn-secondary" id="resetAllBtn" style="width:100%;color:#dc2626;border-color:#fca5a5;">מחק את כל ההודעות והחברים</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button class="btn btn-primary btn-lg" id="saveSettings" style="flex:1;">שמור</button>
+      <button class="btn btn-secondary btn-lg" id="closeSettings2">סגור</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ───
+const MEMBERS = [
+  { id: 'hagay', name: 'חגי', fullName: 'חגי דרדיק', initials: 'חד', role: 'professional', color: 'indigo' },
+  { id: 'maya',  name: 'מאיה', fullName: 'מאיה כהן', initials: 'מכ', role: 'student', color: 'pink' },
+  { id: 'noam',  name: 'נועם', fullName: 'נועם לוי', initials: 'נל', role: 'student', color: 'sky' },
+  { id: 'shir',  name: 'שיר', fullName: 'שיר אדלר', initials: 'שא', role: 'student', color: 'emerald' },
+  { id: 'tal',   name: 'טל', fullName: 'טל בן-עמי', initials: 'טב', role: 'student', color: 'rose' },
+  { id: 'omer',  name: 'עומר', fullName: 'עומר ג׳קלין', initials: 'עג', role: 'student', color: 'amber' },
+];
+
+const STORE = {
+  get: (k, d) => { try { return JSON.parse(localStorage.getItem('maven:' + k)) ?? d; } catch { return d; } },
+  set: (k, v) => localStorage.setItem('maven:' + k, JSON.stringify(v)),
+  rm:  (k) => localStorage.removeItem('maven:' + k),
+};
+
+// ─── STATE ───
+let me = MEMBERS.find(m => m.id === STORE.get('me', 'hagay')) || MEMBERS[0];
+let mode = 'chat';
+let messages = STORE.get('messages', null);
+if (!messages) {
+  // seed sample messages
+  const t = Date.now();
+  messages = [
+    { authorId: 'hagay', text: 'בוקר טוב כיתה 👋 היום נפרק יחד בדיקת קריאייטיב לקהל קר. תזרקו שאלות — אני אענה, וה-AI שומר הערות.', ts: t - 3600000 },
+    { authorId: 'maya', text: 'איך אתה מחליט כמה תקציב להקצות לכל קריאייטיב בבדיקה? אני תמיד שורפת על המפסידים.', ts: t - 3500000 },
+    { authorId: 'hagay', text: 'ברירת המחדל שלי: 200 ש"ח ביום לכל קריאייטיב, מינימום 48 שעות לפני שמחליטים משהו. הורגים מתחת ל-1.2% CTR בקהל קר, מכפילים מנצחים שמגיעים ל-2%+. מקסימום 4 קריאייטיבים לסט מודעות — מטא מפסיקה לחלק תקציב מעל זה.', ts: t - 3400000 },
+    { authorId: 'hagay', text: 'עוד כלל חשוב לפלייבוק: Audience Network כבוי כברירת מחדל לכל הצעה של ניסיון חינם, כושר או בריאות. CPM חצי מ-Feed אבל ה-CAC אחרי רכישה גבוה פי 3.', ts: t - 1800000 },
+  ];
+  STORE.set('messages', messages);
+}
+let notes = STORE.get('notes', null);
+let apiKey = STORE.get('apiKey', '');
+let model = STORE.get('model', 'claude-sonnet-4-5');
+
+// ─── UTILS ───
+const $ = id => document.getElementById(id);
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const formatRich = s => escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+?)`/g, '<code>$1</code>').replace(/\n/g, '<br>');
+const fmtTime = ts => new Date(ts).toLocaleTimeString('he-IL', { hour: 'numeric', minute: '2-digit' });
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── CANNED AI ───
+const cannedReplies = {
+  'תקציב|כמה|allocate|spend|ש"ח|שקל|בודק': () => `על בסיס מה שחגי אמר בשיחה:\n\n**תקציב לקריאייטיב:** 200 ש"ח ביום, מינימום 48 שעות.\n**רף הריגה:** מתחת ל-1.2% CTR בקהל קר.\n**הכפלה:** קריאייטיבים שמגיעים ל-2%+ — מכפילים תקציב.\n**מגבלה:** מקסימום 4 קריאייטיבים לסט מודעות.`,
+  'audience network|רשת': () => `הכלל של חגי: **Audience Network כבוי כברירת מחדל** לכל הצעת ניסיון, כושר או בריאות.\n\nהסיבה: CPM חצי מ-Feed (נראה כמו ניצחון), אבל **ה-CAC אחרי רכישה גבוה פי 3** — תנועה ממוטרצת מרשתות משחקים.`,
+  'קריאייטיב|בדיק|creative|test': () => `**ה-framework של חגי לבדיקת קריאייטיב:**\n\n1. **200 ש"ח ליום לקריאייטיב**, מינימום 48 שעות\n2. **הורגים** מתחת ל-**1.2% CTR** בקהל קר\n3. **מכפילים** מנצחים מעל **2% CTR**\n4. **מקסימום 4 קריאייטיבים לסט** — מטא מפסיקה לחלק תקציב מעל זה\n5. לא סומכים על "מובהקות מוקדמת" — day-parting מסתיר את עצמו לפני 48 שעות`,
+  'ctr|הקלקה|לחיצה': () => `רפי ה-CTR של חגי לקהל קר:\n\n• **מתחת ל-1.2%** → הורגים\n• **1.2% – 2%** → ממתינים 48 שעות מלאות\n• **מעל 2%** → מכפילים תקציב`,
+  '48|שעות|זמן|כמה זמן|זה לוקח': () => `חגי מחכה **מינימום 48 שעות** לפני שמחליטים על קריאייטיב — גם כשמובהקות סטטיסטית מגיעה קודם.\n\nההסבר שלו: **day-parting מסתיר את עצמו לפני 48 שעות** — אתה רואה ביצועי ערב ופוספס שהבוקרים הורגים את הממוצע.`,
+  'יוגה|כושר|פיטנס|בריאות': () => `יוגה / כושר זה בדיוק ה-vertical שחגי הזהיר ממנו לגבי **Audience Network**.\n\nקמפיין כושר עם ניסיון חינם **חייב**:\n• AN כבוי (CAC ירוץ פי 3 בלעדיו)\n• מעקב על event "trial started" (לא רק "page view")\n• להתחיל מ-200 ש"ח, 4 קריאייטיבים, 48 שעות\n• רף הריגה: 1.2% CTR`,
+  'hook|3 שניות': () => `Hooks לא עלו עדיין בשיחה הזו בעומק. שאל את חגי, ברגע שהוא יענה — אזכור את זה בשבילך.`,
+  '^(שלום|היי|hi|hello)': () => `שלום 👋\n\nאני Maven AI — אני מקשיב לכל מה שחגי משתף עם הקהילה ועונה רק על בסיס המילים שלו.\n\nעד עכשיו הוא כיסה:\n• **בדיקת קריאייטיב** לקהל קר\n• **Audience Network** להצעות ניסיון\n\nשאל אותי על אלה, או על כל דבר אחר.`,
+  'מה.*אתה.*יודע|נושאים|כיסה|דיברו': () => `מה שכוסה בשיחה:\n\n**בדיקת קריאייטיב** — ה-framework של חגי עם המספרים (200 ש"ח, 48 שעות, 1.2% CTR, 2% להכפלה, מקסימום 4 לסט).\n\n**Audience Network** — כבוי כברירת מחדל להצעות כושר/בריאות/ניסיון.\n\n**Q4 lesson** — $8K שנשרפו על בדיקות מפוצלות מדי, מה שהוביל ל-framework הנוכחי.`,
+};
+
+function cannedAIReply(question) {
+  const q = question.toLowerCase();
+  for (const [keys, fn] of Object.entries(cannedReplies)) {
+    if (keys.split('|').some(k => {
+      if (k.startsWith('^')) return new RegExp(k, 'i').test(question);
+      return q.includes(k);
+    })) return fn();
+  }
+  return `הנושא הזה לא עלה עדיין בשיחה. הנה מה שחגי **כן** כיסה:\n\n• בדיקת קריאייטיב (200 ש"ח, 48 שעות, 1.2% CTR)\n• Audience Network להצעות ניסיון\n\nשאל על אלה, או פרסם את השאלה בקבוצה — ברגע שחגי יענה, אזכור את זה לך.`;
+}
+
+// ─── REAL CLAUDE (if API key set) ───
+async function realClaude(question) {
+  const transcript = messages.map(m => {
+    if (m.type === 'ai') return `[Maven AI]: ${m.text}`;
+    const author = MEMBERS.find(x => x.id === m.authorId);
+    const tag = author?.role === 'professional' ? ' · מורה' : '';
+    return `[${author?.fullName || 'משתמש'}${tag}]: ${m.text}`;
+  }).join('\n\n');
+
+  const system = `אתה Maven AI — האסיסטנט של קהילת לימוד "פרסום דיגיטלי" שמובלת על ידי חגי דרדיק (מקצוען בפרסום).
+
+תפקידך:
+- לענות על שאלות רק על בסיס מה שנאמר בשיחה.
+- לציין למי שייכת אמירה ("חגי אמר…", "מאיה שאלה…").
+- אם נושא לא כוסה — להגיד את זה בכנות.
+- לענות בעברית, באופן ישיר וטקטי. השפה של חגי: ישירה, מספרים, פרקטית.
+- להשתמש ב-Markdown קל (מודגש עם **).
+
+=== השיחה המלאה ===
+${transcript || '(ריק)'}
+=== סוף ===`;
+
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1500,
+      system,
+      messages: [{ role: 'user', content: question }],
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok) {
+    const msg = data?.error?.message || data?.error?.type || `HTTP ${r.status}`;
+    if (/authentication|invalid|401/i.test(msg)) throw new Error('המפתח שלך נדחה ע"י Anthropic. בדוק אותו ב-console.anthropic.com');
+    if (/credit|balance/i.test(msg)) throw new Error('המפתח תקין אבל אין קרדיט בחשבון Anthropic שלך. הוסף קרדיט.');
+    throw new Error(msg);
+  }
+  return data.content.map(b => b.type === 'text' ? b.text : '').join('');
+}
+
+async function realOrganize() {
+  const transcript = messages.map(m => {
+    if (m.type === 'ai') return `[Maven AI]: ${m.text}`;
+    const author = MEMBERS.find(x => x.id === m.authorId);
+    const tag = author?.role === 'professional' ? ' · מורה' : '';
+    return `[${author?.fullName || 'משתמש'}${tag}]: ${m.text}`;
+  }).join('\n\n');
+
+  const prompt = `ארגן את הידע מתוך שיחת קהילת הלימוד "פרסום דיגיטלי" של חגי דרדיק.
+
+קרא את כל ההודעות והפק סיכום מובנה בפורמט הבא:
+
+## נושאים שכוסו
+- [נושא]: תיאור בשורה אחת
+
+## כללים ומסגרות של חגי
+- [כלל/framework עם מספרים אם רלוונטי]
+
+## החלטות ולקחים
+- [לקח עם הקשר]
+
+## שאלות פתוחות מהקהילה
+- [שם תלמיד]: [השאלה שעדיין לא נענתה]
+
+## מה חגי לא כיסה עדיין
+- [פער שזיהית]
+
+תמציתי, ספציפי, בעברית. אם אין מספיק תוכן — תהיה קצר.
+
+=== השיחה ===
+${transcript || '(אין הודעות)'}
+=== סוף ===`;
+
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error?.message || `HTTP ${r.status}`);
+  return data.content.map(b => b.type === 'text' ? b.text : '').join('');
+}
+
+function cannedOrganize() {
+  const hasCreative = messages.some(m => /קריאייטיב|בדיק/.test(m.text || ''));
+  const hasAN = messages.some(m => /audience network|רשת/i.test(m.text || ''));
+  let out = '## נושאים שכוסו\n';
+  if (hasCreative) out += '- בדיקת קריאייטיב לקהל קר\n';
+  if (hasAN) out += '- אסטרטגיית Audience Network\n';
+  out += '\n## כללים ומסגרות של חגי\n';
+  if (hasCreative) out += '- 200 ש"ח ליום לקריאייטיב, 48 שעות מינימום\n- הורגים מתחת ל-1.2% CTR, מכפילים מעל 2%\n- מקסימום 4 קריאייטיבים לסט מודעות\n';
+  if (hasAN) out += '- Audience Network כבוי כברירת מחדל להצעות ניסיון/כושר/בריאות (CAC פי 3 גבוה)\n';
+  out += '\n## החלטות ולקחים\n- $8K נשרפו ב-Q4 על בדיקות מפוצלות מדי → הוביל ל-framework הנוכחי\n';
+  out += '\n## שאלות פתוחות מהקהילה\n- מאיה: כיצד לאופטם תקציב בקמפיינים תחילתיים\n';
+  out += '\n## מה חגי לא כיסה עדיין\n- אסטרטגיית קהל חם / retargeting\n- נוסחאות hooks ל-3 שניות\n- workflow של הפקת קריאייטיב\n';
+  return out;
+}
+
+// ─── RENDER ───
+function renderMe() {
+  $('meAvatar').textContent = me.initials;
+  $('meAvatar').className = 'nav-icon avatar md c-' + me.color;
+  $('meAvatarPill').textContent = me.initials;
+  $('meAvatarPill').className = 'avatar sm c-' + me.color;
+  $('meName').textContent = me.name;
+  $('meRole').textContent = me.role === 'professional' ? 'מורה' : 'תלמיד';
+}
+
+function renderIdentityMenu() {
+  $('identityMenu').innerHTML = MEMBERS.map(m => `
+    <div class="menu-item ${me.id === m.id ? 'current' : ''}" data-id="${m.id}">
+      <div class="avatar sm c-${m.color}">${m.initials}</div>
+      <div style="display:flex;flex-direction:column;gap:1px;line-height:1.2;">
+        <span style="font-size:13px;font-weight:600;">${escapeHtml(m.fullName)}</span>
+        <span style="font-size:10.5px;color:var(--text-3);">${m.role === 'professional' ? 'מורה' : 'תלמיד'}</span>
+      </div>
+      <span class="check">✓</span>
+    </div>`).join('');
+  document.querySelectorAll('#identityMenu .menu-item').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = el.dataset.id;
+      const m = MEMBERS.find(x => x.id === id);
+      if (m) {
+        me = m;
+        STORE.set('me', m.id);
+        renderMe();
+        renderIdentityMenu();
+        $('identityMenu').classList.remove('open');
+        updatePlaceholder();
+      }
+    });
+  });
+}
+
+function renderMembers() {
+  $('membersList').innerHTML = MEMBERS.map(m => `
+    <div class="member-row">
+      <div class="avatar sm c-${m.color}">${m.initials}</div>
+      <div>
+        <div class="member-name">${escapeHtml(m.fullName)}${m.id === me.id ? ' (אתה)' : ''}</div>
+        <div class="member-status">${m.role === 'professional' ? 'מורה' : 'תלמיד'}</div>
+      </div>
+      ${m.role === 'professional' ? '<span class="pill pill-indigo">מורה</span>' : ''}
+    </div>
+  `).join('');
+}
+
+function renderMessages() {
+  const el = $('messages');
+  if (!messages.length) {
+    el.innerHTML = `<div style="margin:auto;text-align:center;padding:40px 20px;color:var(--text-3);">
+      <div style="font-size:42px;margin-bottom:12px;">💬</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text-2);margin-bottom:6px;">אין הודעות עדיין</div>
+      <div style="font-size:13px;line-height:1.6;">${me.role === 'professional' ? 'התחל את השיחה.' : 'מחכים שהמורה יתחיל.'}</div>
+    </div>`;
+    return;
+  }
+  let html = ''; let lastDay = '';
+  for (const m of messages) {
+    const d = new Date(m.ts).toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'short' });
+    if (d !== lastDay) { html += `<div class="day-divider">${d}</div>`; lastDay = d; }
+    if (m.type === 'ai') {
+      html += `
+        <div class="msg ai">
+          <div class="avatar md c-ai">AI</div>
+          <div class="msg-body">
+            <div class="msg-head">
+              <span class="msg-name" style="color:var(--indigo);">Maven AI</span>
+              <span class="msg-tag">${apiKey ? 'Claude אמיתי' : 'תשובה מתוסקרת'}</span>
+              <span class="msg-time">${fmtTime(m.ts)}</span>
+            </div>
+            <div class="msg-bubble">${formatRich(m.text)}</div>
+          </div>
+        </div>`;
+    } else {
+      const author = MEMBERS.find(x => x.id === m.authorId);
+      const isMe = m.authorId === me.id;
+      html += `
+        <div class="msg ${isMe ? 'you' : ''}">
+          <div class="avatar md c-${author?.color || 'indigo'}">${author?.initials || '?'}</div>
+          <div class="msg-body">
+            <div class="msg-head">
+              <span class="msg-name">${escapeHtml(author?.fullName || 'משתמש')}${isMe ? ' (אתה)' : ''}</span>
+              ${author?.role === 'professional' ? '<span class="msg-tag">מורה</span>' : ''}
+              ${m.askedAI ? '<span class="msg-tag asked-ai">✨ שאל AI</span>' : ''}
+              <span class="msg-time">${fmtTime(m.ts)}</span>
+            </div>
+            <div class="msg-bubble">${escapeHtml(m.text)}</div>
+          </div>
+        </div>`;
+    }
+  }
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+  renderStats();
+}
+
+function renderStats() {
+  const h = messages.filter(m => m.type !== 'ai').length;
+  const a = messages.filter(m => m.type === 'ai').length;
+  $('statMessages').textContent = h;
+  $('statQuestions').textContent = a;
+  $('aiHeroSub').textContent = `מבוסס על חגי · ${h} הודעות`;
+}
+
+function renderNotes() {
+  if (!notes) {
+    $('notesContent').innerHTML = `<p style="color:var(--text-3);font-size:12px;line-height:1.6;">לחץ <b>סכם את הקהילה</b> כדי שה-AI יקרא את כל הצ'אט ויפיק סיכום מובנה.</p>`;
+    return;
+  }
+  let html = ''; let inList = false;
+  for (const line of notes.split('\n')) {
+    const t = line.trim();
+    if (/^##\s+/.test(t)) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<h5>${escapeHtml(t.replace(/^##\s+/, ''))}</h5>`;
+    } else if (/^[-*]\s+/.test(t)) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += `<li>${formatRich(t.replace(/^[-*]\s+/, ''))}</li>`;
+    } else if (t) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<p style="color:var(--text-2);margin:4px 0;">${formatRich(t)}</p>`;
+    }
+  }
+  if (inList) html += '</ul>';
+  $('notesContent').innerHTML = html;
+}
+
+function updatePlaceholder() {
+  const inp = $('composerInput');
+  if (mode === 'ai') {
+    inp.placeholder = 'שאל את Maven AI…';
+  } else {
+    inp.placeholder = me.role === 'professional' ? 'שתף עם הקהילה…' : 'הודעה לכיתה…';
+  }
+}
+
+function showTyping() {
+  const el = $('messages');
+  if (document.getElementById('typing')) return;
+  const t = document.createElement('div');
+  t.id = 'typing';
+  t.className = 'typing';
+  t.innerHTML = `<span>Maven AI ${apiKey ? 'מנתח עם Claude…' : 'קורא את השיחה…'}</span><div class="typing-dots"><span></span><span></span><span></span></div>`;
+  el.appendChild(t);
+  el.scrollTop = el.scrollHeight;
+}
+function hideTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+// ─── SEND ───
+async function send() {
+  const inp = $('composerInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  $('sendBtn').disabled = true;
+
+  messages.push({ authorId: me.id, text, askedAI: mode === 'ai', ts: Date.now() });
+  STORE.set('messages', messages);
+  renderMessages();
+
+  if (mode === 'ai') {
+    showTyping();
+    try {
+      let reply;
+      if (apiKey) {
+        reply = await realClaude(text);
+      } else {
+        // simulate thinking time
+        await new Promise(r => setTimeout(r, 700 + Math.random() * 700));
+        reply = cannedAIReply(text);
+      }
+      hideTyping();
+      messages.push({ type: 'ai', text: reply, ts: Date.now() });
+      STORE.set('messages', messages);
+      renderMessages();
+    } catch (e) {
+      hideTyping();
+      messages.push({ type: 'ai', text: '⚠ ' + e.message, ts: Date.now() });
+      STORE.set('messages', messages);
+      renderMessages();
+    }
+  }
+  $('sendBtn').disabled = false;
+  inp.focus();
+}
+
+// ─── ORGANIZE ───
+async function organize() {
+  const btn = $('organizeBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ico">⟳</span><span>מארגן…</span>';
+  try {
+    if (apiKey) {
+      notes = await realOrganize();
+    } else {
+      await new Promise(r => setTimeout(r, 900));
+      notes = cannedOrganize();
+    }
+    STORE.set('notes', notes);
+    renderNotes();
+    toast(apiKey ? 'הסיכום נוצר על ידי Claude' : 'הסיכום נוצר (מתוסקר)');
+  } catch (e) {
+    toast(e.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = orig;
+}
+
+// ─── SETTINGS ───
+function openSettings() {
+  $('apiKeyInput').value = ''; // don't show actual key
+  $('apiKeyInput').placeholder = apiKey ? '••••••••••' + apiKey.slice(-4) + ' (כבר מוגדר)' : 'sk-ant-…';
+  $('modelSelect').value = model;
+  const ks = $('keyStatus');
+  if (apiKey) {
+    ks.className = 'key-status';
+    ks.innerHTML = `<span class="dot"></span>תשובות AI: <strong style="margin-inline-start:4px;">Claude אמיתי</strong>`;
+  } else {
+    ks.className = 'key-status missing';
+    ks.innerHTML = `<span class="dot"></span>תשובות AI: <strong style="margin-inline-start:4px;">מתוסקרות (ברירת מחדל)</strong>`;
+  }
+  $('settingsModal').classList.add('open');
+}
+function closeSettings() { $('settingsModal').classList.remove('open'); }
+
+function saveSettings() {
+  const newKey = $('apiKeyInput').value.trim();
+  const newModel = $('modelSelect').value;
+  model = newModel;
+  STORE.set('model', model);
+  if (newKey) {
+    if (!newKey.startsWith('sk-ant-')) { toast('מפתח לא תקין — צריך להתחיל ב-sk-ant-'); return; }
+    apiKey = newKey;
+    STORE.set('apiKey', apiKey);
+    toast('המפתח נשמר — תשובות Claude אמיתיות פעילות');
+  } else {
+    toast('ההגדרות נשמרו');
+  }
+  closeSettings();
+}
+
+function clearKey() {
+  apiKey = '';
+  STORE.rm('apiKey');
+  $('apiKeyInput').value = '';
+  $('apiKeyInput').placeholder = 'sk-ant-…';
+  toast('המפתח נמחק. חוזר לתשובות מתוסקרות.');
+  const ks = $('keyStatus');
+  ks.className = 'key-status missing';
+  ks.innerHTML = `<span class="dot"></span>תשובות AI: <strong style="margin-inline-start:4px;">מתוסקרות (ברירת מחדל)</strong>`;
+}
+
+function resetAll() {
+  if (!confirm('זה ימחק את כל ההודעות והסיכום (המפתח יישאר). להמשיך?')) return;
+  STORE.rm('messages');
+  STORE.rm('notes');
+  messages = [];
+  notes = null;
+  renderMessages();
+  renderNotes();
+  closeSettings();
+  toast('הכל נמחק');
+}
+
+// ─── WIRE ───
+$('sendBtn').addEventListener('click', send);
+$('composerInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    if (mode === 'ai') $('composerRow').classList.add('ai-mode');
+    else $('composerRow').classList.remove('ai-mode');
+    updatePlaceholder();
+    $('composerInput').focus();
+  });
+});
+
+$('identityPill').addEventListener('click', e => {
+  e.stopPropagation();
+  $('identityMenu').classList.toggle('open');
+});
+document.addEventListener('click', () => $('identityMenu').classList.remove('open'));
+
+$('organizeBtn').addEventListener('click', organize);
+$('settingsBtn').addEventListener('click', openSettings);
+$('settingsBtn2').addEventListener('click', openSettings);
+$('resetBtn').addEventListener('click', resetAll);
+$('resetBtn2').addEventListener('click', resetAll);
+
+$('closeSettings').addEventListener('click', closeSettings);
+$('closeSettings2').addEventListener('click', closeSettings);
+$('saveSettings').addEventListener('click', saveSettings);
+$('clearKeyBtn').addEventListener('click', clearKey);
+$('resetAllBtn').addEventListener('click', resetAll);
+
+$('settingsModal').addEventListener('click', e => {
+  if (e.target.id === 'settingsModal') closeSettings();
+});
+
+$('closeBanner').addEventListener('click', () => {
+  $('welcomeBanner').classList.add('hide');
+  STORE.set('bannerDismissed', true);
+});
+if (STORE.get('bannerDismissed', false)) $('welcomeBanner').classList.add('hide');
+
+// ─── GO ───
+renderMe();
+renderIdentityMenu();
+renderMembers();
+renderMessages();
+renderNotes();
+updatePlaceholder();
+</script>
+
+</body>
+</html>

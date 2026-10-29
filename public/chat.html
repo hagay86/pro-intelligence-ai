@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maven — האפליקציה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="maven.css" />
+<script src="config.js"></script>
+<style>
+  body { overflow: hidden; height: 100vh; }
+
+  /* app shell */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 64px 320px 1fr 340px;
+    height: 100vh;
+  }
+  @media (max-width: 1200px) { .app-shell { grid-template-columns: 56px 280px 1fr 300px; } }
+  @media (max-width: 1024px) { .app-shell { grid-template-columns: 56px 260px 1fr; } .app-right { display: none; } }
+  @media (max-width: 768px)  { .app-shell { grid-template-columns: 1fr; } .app-nav, .app-rooms, .app-right { display: none; } }
+
+  /* far-left nav rail */
+  .app-nav {
+    background: var(--text);
+    color: white;
+    padding: 16px 8px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+  }
+  .app-nav .logo-mark {
+    width: 38px; height: 38px;
+    font-size: 17px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  }
+  .nav-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    color: rgba(255,255,255,0.6);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    position: relative;
+  }
+  .nav-icon:hover { background: rgba(255,255,255,0.08); color: white; }
+  .nav-icon.active {
+    background: rgba(79, 70, 229, 0.2);
+    color: white;
+    box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.4);
+  }
+  .nav-icon .badge {
+    position: absolute; top: 6px; right: 6px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 2px solid var(--text);
+  }
+  .nav-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+
+  /* rooms column */
+  .app-rooms {
+    background: var(--bg-2);
+    border-inline-end: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .rooms-head {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .rooms-search {
+    margin-top: 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+    color: var(--text-3);
+  }
+  .rooms-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .room {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .room:hover { background: var(--bg-3); }
+  .room.active {
+    background: var(--bg);
+    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+  }
+  .room-info { flex: 1; min-width: 0; }
+  .room-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .room-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .room-time { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+  .room-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 3px; }
+  .room-preview { font-size: 12.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .room-unread {
+    background: var(--indigo);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-inline-start: 6px;
+  }
+
+  /* central chat */
+  .app-chat {
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-head {
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg);
+  }
+  .chat-head-left { display: flex; align-items: center; gap: 12px; }
+  .chat-head-title { font-size: 15.5px; font-weight: 700; }
+  .chat-head-sub { font-size: 12px; color: var(--text-2); }
+  .chat-head-actions { display: flex; gap: 6px; }
+  .head-icon {
+    width: 36px; height: 36px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    display: grid; place-items: center;
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: 16px;
+  }
+  .head-icon:hover { background: var(--bg-2); color: var(--text); }
+
+  /* messages area */
+  .messages {
+    flex: 1; overflow-y: auto;
+    padding: 20px 24px;
+    display: flex; flex-direction: column;
+    gap: 4px;
+    background: var(--bg-2);
+  }
+  .day-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 16px 0 8px;
+    color: var(--text-3);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .day-divider::before, .day-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  .msg {
+    display: flex; gap: 11px;
+    padding: 4px 0;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .msg-name { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .msg-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    background: var(--indigo-soft);
+    color: var(--indigo);
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .msg-tag.asked-ai {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .msg-time { font-size: 11px; color: var(--text-3); margin-inline-start: auto; }
+  .msg-bubble {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    border-top-right-radius: 3px;
+    padding: 10px 14px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--text);
+    max-width: 760px;
+  }
+  .msg.you .msg-bubble {
+    background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+    border-color: var(--indigo-line);
+  }
+  .msg.ai {
+    background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+    border: 1px solid var(--indigo-line);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin: 8px 0;
+    position: relative;
+  }
+  .msg.ai::before {
+    content: '';
+    position: absolute;
+    top: 0; inset-inline-start: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #4f46e5, #7c3aed);
+    border-radius: 2px;
+  }
+  .msg.ai .msg-bubble {
+    background: transparent;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    max-width: none;
+  }
+  .msg.ai .msg-bubble strong { color: var(--indigo); }
+  .msg.ai .citation {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px;
+    padding: 1px 7px;
+    background: var(--bg);
+    color: var(--indigo);
+    border: 1px solid var(--indigo-line);
+    border-radius: 5px;
+    margin: 0 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  /* typing */
+  .typing {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--indigo-soft);
+    border: 1px solid var(--indigo-line);
+    border-radius: 14px;
+    width: fit-content;
+    color: var(--indigo);
+    font-size: 13px;
+    font-weight: 500;
+    margin: 8px 0;
+  }
+  .typing-dots { display: flex; gap: 4px; margin-inline-start: 6px; }
+  .typing-dots span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--indigo);
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-3px); opacity: 1; } }
+
+  /* composer */
+  .composer {
+    padding: 14px 22px 18px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+  .composer-row {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px 14px 6px 8px;
+    transition: all 0.15s;
+  }
+  .composer-row:focus-within {
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 3px var(--indigo-soft);
+    background: var(--bg);
+  }
+  .composer-row.ai-mode {
+    background: linear-gradient(135deg, var(--indigo-soft), #f5f3ff);
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+  }
+  .composer-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 8px 0;
+  }
+  .composer-row input::placeholder { color: var(--text-3); }
+  .composer-mode {
+    display: flex; gap: 2px;
+    background: var(--bg);
+    border-radius: 9px;
+    padding: 2px;
+    border: 1px solid var(--border);
+  }
+  .mode-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text-2);
+    display: flex; align-items: center; gap: 5px;
+    white-space: nowrap;
+  }
+  .mode-btn.active {
+    background: var(--indigo);
+    color: white;
+  }
+  .composer-actions { display: flex; gap: 4px; }
+  .composer-icon {
+    width: 32px; height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text-3);
+    font-size: 16px;
+    font-family: inherit;
+  }
+  .composer-icon:hover { background: var(--bg-3); color: var(--text-2); }
+  .send-btn {
+    width: 36px; height: 36px;
+    background: var(--indigo);
+    border: none;
+    border-radius: 9px;
+    color: white;
+    cursor: pointer;
+    display: grid; place-items: center;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+  .send-btn:hover { background: var(--indigo-2); transform: scale(1.05); }
+
+  .composer-hint {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--text-3);
+    display: flex; gap: 14px;
+    padding: 0 4px;
+  }
+  .composer-hint kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 1px 5px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-2);
+  }
+
+  /* right panel — AI features */
+  .app-right {
+    background: var(--bg-2);
+    border-inline-start: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+
+  /* AI hero card */
+  .ai-hero {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.15), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1), transparent 40%);
+  }
+  .ai-hero-inner { position: relative; }
+  .ai-hero-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .ai-hero-orb {
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 800;
+  }
+  .ai-hero-title { font-size: 14px; font-weight: 700; }
+  .ai-hero-sub { font-size: 11.5px; opacity: 0.85; }
+  .ai-hero p {
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    opacity: 0.94;
+  }
+  .ai-hero-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ai-hero-stat {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 7px;
+    padding: 8px 10px;
+  }
+  .ai-hero-stat-num { font-size: 16px; font-weight: 800; }
+  .ai-hero-stat-label { font-size: 10px; opacity: 0.78; }
+
+  /* side card */
+  .side-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .side-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .side-card-title {
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .side-card-title .ico {
+    width: 20px; height: 20px;
+    background: var(--indigo-soft);
+    border-radius: 5px;
+    display: grid; place-items: center;
+    font-size: 11px;
+    color: var(--indigo);
+    font-weight: 800;
+  }
+
+  .notes-content {
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .notes-content h5 {
+    font-size: 10.5px;
+    color: var(--indigo);
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin: 10px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--indigo-line);
+  }
+  .notes-content h5:first-child { margin-top: 0; }
+  .notes-content ul { list-style: none; padding: 0; margin: 0 0 4px; }
+  .notes-content li {
+    padding: 3px 0 3px 14px;
+    position: relative;
+    color: var(--text-2);
+  }
+  .notes-content li::before {
+    content: '▸';
+    position: absolute; inset-inline-start: 0;
+    color: var(--indigo);
+    font-size: 9px;
+    top: 4px;
+  }
+
+  /* members */
+  .member-row {
+    display: flex; align-items: center; gap: 9px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .member-row:hover { background: var(--bg-2); }
+  .member-name { font-size: 12.5px; font-weight: 500; }
+  .member-status { font-size: 10px; color: var(--text-3); }
+  .member-row .pill { margin-inline-start: auto; }
+
+  /* quick actions */
+  .quick-action {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-2);
+    background: transparent;
+    border: 1px solid transparent;
+    font-family: inherit;
+    width: 100%;
+    text-align: right;
+  }
+  .quick-action:hover { background: var(--bg-2); color: var(--text); border-color: var(--border); }
+  .quick-action .ico { font-size: 15px; width: 20px; text-align: center; }
+
+  /* welcome modal */
+  .welcome-modal {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .welcome-modal.open { display: flex; }
+  .welcome-card {
+    background: var(--bg);
+    border-radius: 18px;
+    padding: 36px 40px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: var(--shadow-xl);
+    text-align: center;
+    position: relative;
+  }
+  .welcome-close {
+    position: absolute; top: 16px; left: 16px;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--text-2);
+  }
+  .welcome-emoji { font-size: 48px; margin-bottom: 16px; }
+  .welcome-card h2 {
+    font-size: 26px; font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+  }
+  .welcome-card > p {
+    font-size: 14.5px;
+    color: var(--text-2);
+    line-height: 1.65;
+    margin-bottom: 24px;
+  }
+  .welcome-steps {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 24px;
+    text-align: right;
+  }
+  .welcome-step {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .welcome-step-num {
+    width: 28px; height: 28px;
+    background: var(--indigo);
+    border-radius: 7px;
+    display: grid; place-items: center;
+    color: white;
+    font-size: 12px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .welcome-step-text {
+    font-size: 13.5px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .welcome-step-text strong { color: var(--indigo); }
+  /* ── fixes: hide decorative controls that don't do anything yet ── */
+  .nav-icon.decor, .composer-actions, .rooms-search, .head-icon.decor { display: none !important; }
+  .mobile-only { display: none !important; }
+  .app-shell { height: 100vh; height: 100dvh; }
+  body { height: 100vh; height: 100dvh; }
+
+  /* ── phones & small tablets ── */
+  @media (max-width: 768px) {
+    .app-shell { grid-template-columns: 1fr !important; }
+    .app-nav { display: none !important; }
+    .app-chat { min-width: 0; }
+    .mobile-only { display: grid !important; }
+    .app-rooms, .app-right {
+      display: block !important;
+      position: fixed; top: 0; bottom: 0; z-index: 60;
+      width: min(86vw, 360px);
+      background: var(--bg, #fff);
+      overflow-y: auto;
+      box-shadow: 0 0 40px rgba(15, 23, 42, 0.25);
+      transition: transform 0.22s ease;
+    }
+    .app-rooms { right: 0; transform: translateX(105%); }
+    .app-right { left: 0; transform: translateX(-105%); padding: 14px; }
+    body.show-rooms .app-rooms { transform: none; }
+    body.show-right .app-right { transform: none; }
+    .drawer-scrim { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.35); z-index: 55; }
+    body.show-rooms .drawer-scrim, body.show-right .drawer-scrim { display: block; }
+    .composer-hint { display: none; }
+    .composer-mode .mode-btn { padding-inline: 8px; }
+    .chat-head { padding-inline: 10px; gap: 6px; }
+    .chat-head-actions { gap: 2px; }
+    .chat-head-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+    #composerInput { font-size: 16px; min-width: 0; } /* stops iOS zoom-on-focus */
+  }
+</style>
+</head>
+<body>
+
+<div class="drawer-scrim" id="drawerScrim"></div>
+<div class="app-shell">
+
+  <!-- LEFT NAV RAIL -->
+  <aside class="app-nav">
+    <a href="index.html" class="logo-mark">M</a>
+    <button class="nav-icon active" title="קהילות">💬<span class="badge"></span></button>
+    <button class="nav-icon decor" title="הודעות פרטיות">📥</button>
+    <button class="nav-icon decor" title="חיפוש AI">🔍</button>
+    <button class="nav-icon decor" title="פעילות">🔔</button>
+
+    <div class="nav-bottom">
+      <button class="nav-icon decor" title="הגדרות">⚙</button>
+      <a href="login.html" class="avatar md c-indigo" style="cursor:pointer;">חד</a>
+    </div>
+  </aside>
+
+  <!-- ROOMS LIST -->
+  <aside class="app-rooms">
+    <div class="rooms-head">
+      <div class="row between">
+        <div style="font-size:16px;font-weight:800;">הקהילות שלי</div>
+        <button class="btn btn-primary btn-xs" id="roomsNewBtn">+ חדשה</button>
+      </div>
+      <div class="rooms-search">
+        🔍 חפש קהילה או הודעה…
+      </div>
+    </div>
+    <div class="rooms-list" id="roomsList">
+      <!-- populated by JS -->
+    </div>
+  </aside>
+
+  <!-- MAIN CHAT -->
+  <main class="app-chat">
+    <div class="chat-head" id="chatHead">
+      <div class="chat-head-left">
+        <div class="avatar md c-indigo" id="chatHeadAvatar">M</div>
+        <div>
+          <div class="chat-head-title" id="chatHeadTitle">טוען…</div>
+          <div class="chat-head-sub" id="chatHeadSub">—</div>
+        </div>
+      </div>
+      <div class="chat-head-actions">
+        <button class="head-icon mobile-only" id="openRoomsBtn" title="הקהילות שלי">☰</button>
+        <button class="head-icon mobile-only" id="openRightBtn" title="AI וחברים">✨</button>
+        <button class="head-icon" id="copyCodeBtn" title="העתק קוד הזמנה">🔗</button>
+        <button class="head-icon" id="newRoomBtn" title="חדר חדש">＋</button>
+        <button class="head-icon" id="logoutBtn" title="התנתק">⏏</button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <!-- populated by JS -->
+    </div>
+
+    <div class="composer">
+      <div class="composer-row" id="composerRow">
+        <div class="composer-mode">
+          <button class="mode-btn active" data-mode="chat">💬 צ'אט</button>
+          <button class="mode-btn" data-mode="ai">✨ שאל AI</button>
+        </div>
+        <input type="text" id="composerInput" placeholder="הודעה לקהילה…" autocomplete="off" />
+        <div class="composer-actions">
+          <button class="composer-icon" title="קובץ">📎</button>
+          <button class="composer-icon" title="אמוג'י">😊</button>
+          <button class="composer-icon" title="הקלטה">🎤</button>
+        </div>
+        <button class="send-btn" id="sendBtn" title="שלח">↑</button>
+      </div>
+      <div class="composer-hint">
+        <span><kbd>Enter</kbd> שלח</span>
+        <span>✨ שאל AI — התשובה מבוססת רק על מה שנאמר כאן</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="app-right">
+
+    <!-- AI hero -->
+    <div class="ai-hero">
+      <div class="ai-hero-inner">
+        <div class="ai-hero-head">
+          <div class="ai-hero-orb">AI</div>
+          <div>
+            <div class="ai-hero-title">Maven AI</div>
+            <div class="ai-hero-sub" id="aiHeroSub">מקשיב לקהילה</div>
+          </div>
+        </div>
+        <p>ה-AI של הקהילה הזו לומד מכל הודעה של המורה, ואת השאלות שלך הוא עונה בקול שלו.</p>
+        <div class="ai-hero-stats">
+          <div class="ai-hero-stat">
+            <div class="ai-hero-stat-num" id="statMessages">0</div>
+            <div class="ai-hero-stat-label">הודעות בזיכרון</div>
+          </div>
+          <div class="ai-hero-stat">
+            <div class="ai-hero-stat-num" id="statQuestions">0</div>
+            <div class="ai-hero-stat-label">שאלות נענו</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="side-card">
+      <div class="side-card-head">
+        <div class="side-card-title"><div class="ico">⚡</div>פעולות מהירות</div>
+      </div>
+      <button class="quick-action" id="qaOrganize"><span class="ico">📊</span><span>סכם את הקהילה</span></button>
+      <button class="quick-action" id="qaCopyCode"><span class="ico">🔗</span><span>העתק קוד הזמנה</span></button>
+      <button class="quick-action" id="qaJoinRoom"><span class="ico">＋</span><span>הצטרף לקהילה בקוד</span></button>
+      <button class="quick-action" id="qaConnectClaude"><span class="ico">🧠</span><span id="claudeBtnLabel">חבר את Claude שלי</span></button>
+      <input type="file" id="claudeFile" accept=".json,application/json" style="display:none;" />
+    </div>
+
+    <!-- AI knows -->
+    <div class="side-card">
+      <div class="side-card-head">
+        <div class="side-card-title"><div class="ico">🧠</div>מה ה-AI יודע</div>
+        <button class="btn btn-ghost btn-xs" id="organizeBtn">רענן</button>
+      </div>
+      <div class="notes-content" id="notesContent">
+        <p class="dim tiny" style="line-height:1.6;">לחץ <strong>רענן</strong> כדי שה-AI יקרא את כל הצ'אט ויפיק סיכום מובנה.</p>
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div class="side-card">
+      <div class="side-card-head">
+        <div class="side-card-title"><div class="ico">👥</div>חברי הקהילה</div>
+        <span class="faint tiny" id="memberCount">0</span>
+      </div>
+      <div id="membersList">
+        <p class="dim tiny" style="padding:8px;">טוען…</p>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<!-- Welcome modal (shown on ?welcome=1) -->
+<div class="welcome-modal" id="welcomeModal">
+  <div class="welcome-card">
+    <button class="welcome-close" id="closeWelcome">✕</button>
+    <div class="welcome-emoji">🎉</div>
+    <h2 id="welcomeTitle">ברוך הבא ל-Maven!</h2>
+    <p id="welcomeBody">החשבון שלך נוצר. בוא נקים את הקהילה הראשונה שלך.</p>
+    <div class="welcome-steps" id="welcomeSteps">
+      <div class="welcome-step">
+        <div class="welcome-step-num">1</div>
+        <div class="welcome-step-text"><strong>פתח קהילה</strong> — תן לה שם, קבל קוד הזמנה</div>
+      </div>
+      <div class="welcome-step">
+        <div class="welcome-step-num">2</div>
+        <div class="welcome-step-text"><strong>הזמן את הקהילה</strong> — שתף את קוד ההזמנה</div>
+      </div>
+      <div class="welcome-step">
+        <div class="welcome-step-num">3</div>
+        <div class="welcome-step-text"><strong>תשתף ידע</strong> — ה-AI יבנה את הזיכרון מעצמו</div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-lg" id="startBtn" style="width:100%;">בוא נתחיל ←</button>
+  </div>
+</div>
+
+<!-- Create/Join room modal -->
+<div class="welcome-modal" id="roomModal">
+  <div class="welcome-card" style="text-align:right;">
+    <button class="welcome-close" id="closeRoomModal">✕</button>
+    <h2 id="roomModalTitle" style="text-align:right;">הקהילה הראשונה שלך</h2>
+    <p id="roomModalBody" style="text-align:right;">פתח קהילה משלך (אם אתה מורה) או הצטרף לקהילה קיימת בעזרת קוד.</p>
+
+    <div id="proPanel">
+      <div class="field">
+        <label class="label">שם הקהילה</label>
+        <input class="input" id="newRoomName" placeholder="לדוגמה: פרסום דיגיטלי · מחזור 3" />
+      </div>
+      <div class="field">
+        <label class="label">נושא <span class="faint tiny">(אופציונלי)</span></label>
+        <input class="input" id="newRoomTopic" placeholder="פרסום במטא, גוגל, אסטרטגיית קריאייטיב" />
+      </div>
+      <button class="btn btn-primary btn-lg" id="doCreateRoom" style="width:100%;margin-bottom:10px;">פתח קהילה</button>
+    </div>
+
+    <div class="divider-row" style="display:flex;align-items:center;gap:10px;color:var(--text-3);font-size:12px;margin:20px 0;">
+      <span style="flex:1;height:1px;background:var(--border);"></span>
+      או
+      <span style="flex:1;height:1px;background:var(--border);"></span>
+    </div>
+
+    <div id="studentPanel">
+      <div class="field">
+        <label class="label">קוד הזמנה</label>
+        <input class="input" id="joinCodeInput" placeholder="ABC123" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;" />
+      </div>
+      <button class="btn btn-secondary btn-lg" id="doJoinRoom" style="width:100%;">הצטרף בעזרת קוד</button>
+    </div>
+
+    <div id="roomModalError" class="error-banner" style="margin-top:14px;display:none;padding:10px 13px;background:var(--red-soft);border:1px solid #fca5a5;border-radius:9px;color:#991b1b;font-size:13px;"></div>
+  </div>
+</div>
+
+<!-- Server unreachable banner -->
+<div id="serverBanner" style="display:none;position:fixed;bottom:20px;inset-inline-start:20px;padding:13px 18px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:10px;font-size:13px;box-shadow:var(--shadow-lg);z-index:300;max-width:340px;line-height:1.5;">
+  <strong>השרת לא נגיש.</strong><br>
+  ודא ש-<code style="font-family:'JetBrains Mono',monospace;background:white;padding:1px 5px;border-radius:4px;">npm start</code> רץ במחשב, או שכתובת ה-API ב-<code style="font-family:'JetBrains Mono',monospace;background:white;padding:1px 5px;border-radius:4px;">config.js</code> נכונה.
+</div>
+
+<script>
+// ── Maven chat — real backend integration ──
+
+let me = null;
+let rooms = [];
+let currentRoom = null;
+let members = [];
+let messages = [];
+let mode = 'chat';
+let pollTimer = null;
+
+const $ = id => document.getElementById(id);
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const formatRich = s => escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+const fmtTime = ts => new Date(ts).toLocaleTimeString('he-IL', { hour: 'numeric', minute: '2-digit' });
+const fmtRelative = ts => {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'עכשיו';
+  if (s < 3600) return `לפני ${Math.floor(s/60)} ד'`;
+  if (s < 86400) return fmtTime(ts);
+  return new Date(ts).toLocaleDateString('he-IL', { month: 'short', day: 'numeric' });
+};
+const initials = name => {
+  const parts = String(name || '').trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return (parts[0] || '?').slice(0, 2).toUpperCase();
+};
+const COLORS = ['indigo','rose','emerald','sky','amber','teal','pink','purple','orange','violet'];
+const colorFor = id => COLORS[Math.abs(parseInt(id, 10) || 0) % COLORS.length];
+
+function showServerError() { $('serverBanner').style.display = 'block'; }
+function hideServerError() { $('serverBanner').style.display = 'none'; }
+
+// ── BOOT ──
+async function boot() {
+  // 1. Check auth
+  let user;
+  try {
+    const r = await window.mavenFetch('/api/auth/me');
+    user = r.user;
+  } catch (e) {
+    showServerError();
+    return;
+  }
+  if (!user) { location.href = 'login.html'; return; }
+  me = user;
+  renderMe();
+
+  // 2. Joined through an invite link? → join automatically
+  let pendingCode = new URLSearchParams(location.search).get('code');
+  try { pendingCode = pendingCode || sessionStorage.getItem('mavenInvite'); sessionStorage.removeItem('mavenInvite'); } catch {}
+  let joinedRoomId = null;
+  if (pendingCode) {
+    try {
+      const j = await window.mavenFetch('/api/rooms/join', { method: 'POST', body: JSON.stringify({ code: pendingCode.trim().toUpperCase() }) });
+      joinedRoomId = j.room.id;
+    } catch (e) { console.warn('invite join failed:', e.message); }
+  }
+
+  // 3. Load rooms
+  await loadRooms();
+  if (joinedRoomId) { await selectRoom(joinedRoomId); return; }
+
+  // 3. Pick a room or show modal to create/join
+  const showWelcome = new URLSearchParams(location.search).get('welcome') === '1';
+  if (rooms.length === 0) {
+    showRoomModal(showWelcome);
+  } else {
+    if (showWelcome) $('welcomeModal').classList.add('open');
+    await selectRoom(rooms[0].id);
+  }
+}
+
+async function loadRooms() {
+  try {
+    const r = await window.mavenFetch('/api/rooms');
+    rooms = r.rooms || [];
+    renderRoomsList();
+  } catch (e) { console.error('loadRooms:', e); }
+}
+
+async function selectRoom(roomId) {
+  try {
+    const r = await window.mavenFetch('/api/rooms/' + roomId);
+    currentRoom = r.room;
+    members = r.members || [];
+    await loadMessages();
+    await loadNotes();
+    renderRoomHead();
+    renderRoomsList();
+    renderMembers();
+    renderMessages();
+    renderAIStats();
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(pollMessages, 4000);
+    $('composerInput').focus();
+  } catch (e) {
+    console.error('selectRoom:', e);
+  }
+}
+
+async function loadMessages() {
+  if (!currentRoom) return;
+  try {
+    const r = await window.mavenFetch('/api/rooms/' + currentRoom.id + '/messages');
+    messages = r.messages || [];
+  } catch (e) { console.error('loadMessages:', e); }
+}
+
+async function pollMessages() {
+  if (!currentRoom) return;
+  try {
+    const r = await window.mavenFetch('/api/rooms/' + currentRoom.id + '/messages');
+    const newMessages = r.messages || [];
+    const serverCount = messages.filter(m => m.id > 0).length;
+    if (newMessages.length !== serverCount) {
+      messages = newMessages;
+      renderMessages();
+      renderAIStats();
+    }
+  } catch {}
+}
+
+async function loadNotes() {
+  if (!currentRoom) return;
+  try {
+    const r = await window.mavenFetch('/api/rooms/' + currentRoom.id + '/notes');
+    const notes = r.notes;
+    if (notes && notes.content) renderNotes(notes.content);
+  } catch (e) {}
+}
+
+// ── RENDER ──
+function renderMe() {
+  // top-right avatar in left rail
+  const av = document.querySelector('.app-nav .avatar');
+  if (av) {
+    av.textContent = initials(me.name);
+    av.className = 'avatar md c-' + (me.color || colorFor(me.id));
+  }
+}
+
+function renderRoomsList() {
+  const el = $('roomsList');
+  if (!rooms.length) {
+    el.innerHTML = `<div style="padding:18px 14px;text-align:center;color:var(--text-3);font-size:13px;line-height:1.6;">
+      אין לך עוד קהילות.<br>
+      <button class="btn btn-primary btn-sm" id="emptyStateAdd" style="margin-top:10px;">+ פתח קהילה / הצטרף</button>
+    </div>`;
+    $('emptyStateAdd').addEventListener('click', () => showRoomModal());
+    return;
+  }
+  el.innerHTML = rooms.map(r => {
+    const isActive = currentRoom && currentRoom.id === r.id;
+    const color = colorFor(r.id);
+    return `
+      <div class="room ${isActive ? 'active' : ''}" data-room-id="${r.id}">
+        <div class="avatar md c-${color}">${initials(r.name)}</div>
+        <div class="room-info">
+          <div class="room-top">
+            <div class="room-name">${escapeHtml(r.name)}</div>
+            <div class="room-time">${r.created_at ? fmtRelative(r.created_at) : ''}</div>
+          </div>
+          <div class="room-bottom">
+            <div class="room-preview">${escapeHtml(r.topic || 'אין נושא')}</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  document.querySelectorAll('#roomsList .room').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.roomId, 10);
+      if (currentRoom && currentRoom.id === id) return;
+      selectRoom(id);
+    });
+  });
+}
+
+function renderRoomHead() {
+  if (!currentRoom) return;
+  $('chatHeadTitle').textContent = currentRoom.name;
+  $('chatHeadAvatar').textContent = initials(currentRoom.name);
+  $('chatHeadAvatar').className = 'avatar md c-' + colorFor(currentRoom.id);
+  const professional = members.find(m => m.role === 'professional');
+  const profName = professional?.name || '';
+  $('chatHeadSub').textContent = `${profName ? profName + ' · ' : ''}${members.length} חברים · קוד ${currentRoom.invite_code}`;
+}
+
+function renderMembers() {
+  $('memberCount').textContent = members.length;
+  const el = $('membersList');
+  if (!members.length) {
+    el.innerHTML = `<p class="dim tiny" style="padding:8px;">אין חברים עדיין</p>`;
+    return;
+  }
+  el.innerHTML = members.map(m => `
+    <div class="member-row">
+      <div class="avatar sm c-${m.color || colorFor(m.id)}">${initials(m.name)}</div>
+      <div>
+        <div class="member-name">${escapeHtml(m.name)}${m.id === me.id ? ' (אתה)' : ''}</div>
+        <div class="member-status">${m.role === 'professional' ? 'מורה' : 'תלמיד'}</div>
+      </div>
+      ${m.role === 'professional' ? '<span class="pill pill-indigo">מורה</span>' : ''}
+    </div>`).join('');
+}
+
+function renderMessages() {
+  const el = $('messages');
+  if (!messages.length) {
+    el.innerHTML = `<div style="margin:auto;text-align:center;padding:40px 20px;color:var(--text-3);">
+      <div style="font-size:42px;margin-bottom:12px;">💬</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text-2);margin-bottom:6px;">אין הודעות עדיין</div>
+      <div style="font-size:13px;line-height:1.6;">${me.role === 'professional' ? 'התחל את השיחה — שתף ידע עם הקהילה.' : 'מחכים שהמורה יתחיל את השיחה.'}</div>
+    </div>`;
+    return;
+  }
+
+  const memberMap = new Map(members.map(m => [m.id, m]));
+  let html = '';
+  let lastDay = '';
+  for (const m of messages) {
+    const day = new Date(m.ts).toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'short' });
+    if (day !== lastDay) { html += `<div class="day-divider">${day}</div>`; lastDay = day; }
+    if (m.type === 'ai') {
+      const askedBy = memberMap.get(m.asked_by);
+      html += `
+        <div class="msg ai">
+          <div class="avatar md c-ai">AI</div>
+          <div class="msg-body">
+            <div class="msg-head">
+              <span class="msg-name" style="color:var(--indigo);">Maven AI</span>
+              <span class="msg-tag">מבוסס על הקהילה</span>
+              ${askedBy ? `<span class="faint tiny">עונה ל-${escapeHtml(askedBy.name)}</span>` : ''}
+              <span class="msg-time">${fmtTime(m.ts)}</span>
+            </div>
+            <div class="msg-bubble" dir="auto">${formatRich(m.content)}</div>
+          </div>
+        </div>`;
+    } else {
+      const author = memberMap.get(m.author_id);
+      const name = author?.name || 'משתמש';
+      const color = author?.color || colorFor(m.author_id);
+      const isMe = m.author_id === me.id;
+      const isProf = author?.role === 'professional';
+      html += `
+        <div class="msg ${isMe ? 'you' : ''}">
+          <div class="avatar md c-${color}">${initials(name)}</div>
+          <div class="msg-body">
+            <div class="msg-head">
+              <span class="msg-name">${escapeHtml(name)}${isMe ? ' (אתה)' : ''}</span>
+              ${isProf ? '<span class="msg-tag">מורה</span>' : ''}
+              ${m.asked_ai ? '<span class="msg-tag asked-ai">✨ שאל AI</span>' : ''}
+              <span class="msg-time">${fmtTime(m.ts)}</span>
+            </div>
+            <div class="msg-bubble" dir="auto">${escapeHtml(m.content)}</div>
+          </div>
+        </div>`;
+    }
+  }
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+
+function renderNotes(content) {
+  if (!content) return;
+  const html = content
+    .split('\n')
+    .map(line => {
+      const trim = line.trim();
+      if (/^##\s+/.test(trim)) return `<h5>${escapeHtml(trim.replace(/^##\s+/, ''))}</h5>`;
+      if (/^[-*]\s+/.test(trim)) return `<li>${formatRich(trim.replace(/^[-*]\s+/, ''))}</li>`;
+      if (trim) return `<p style="margin:4px 0;color:var(--text-2);">${formatRich(trim)}</p>`;
+      return '';
+    })
+    .join('');
+  // wrap consecutive li in ul
+  const wrapped = html.replace(/(<li>.*?<\/li>)+/gs, m => '<ul>' + m + '</ul>');
+  $('notesContent').innerHTML = wrapped;
+}
+
+function renderAIStats() {
+  const humanCount = messages.filter(m => m.type === 'human').length;
+  const aiCount = messages.filter(m => m.type === 'ai').length;
+  $('statMessages').textContent = humanCount;
+  $('statQuestions').textContent = aiCount;
+  const prof = members.find(m => m.role === 'professional');
+  if (prof) $('aiHeroSub').textContent = `מבוסס על ${prof.name} · ${humanCount} הודעות`;
+}
+
+function showTyping() {
+  const el = $('messages');
+  if (document.getElementById('typing')) return;
+  const t = document.createElement('div');
+  t.id = 'typing'; t.className = 'typing';
+  t.innerHTML = `<span>Maven AI קורא את השיחה…</span><div class="typing-dots"><span></span><span></span><span></span></div>`;
+  el.appendChild(t);
+  el.scrollTop = el.scrollHeight;
+}
+function hideTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+// ── SEND ──
+async function send() {
+  const inp = $('composerInput');
+  const text = inp.value.trim();
+  if (!text || !currentRoom) return;
+  inp.value = '';
+  $('sendBtn').disabled = true;
+  inp.disabled = true;
+
+  if (mode === 'ai') {
+    // optimistic local insert
+    messages.push({ id: -1, type: 'human', author_id: me.id, content: text, asked_ai: 1, ts: Date.now() });
+    renderMessages();
+    showTyping();
+    try {
+      await window.mavenFetch('/api/rooms/' + currentRoom.id + '/ask', {
+        method: 'POST',
+        body: JSON.stringify({ question: text }),
+      });
+      await loadMessages();
+      hideTyping();
+      renderMessages();
+      renderAIStats();
+    } catch (err) {
+      hideTyping();
+      // the question itself was saved on the server — reload, then show the error under it
+      await loadMessages();
+      if (!messages.some(m => m.asked_ai && m.author_id === me.id && m.content === text)) {
+        messages.push({ id: -1, type: 'human', author_id: me.id, content: text, asked_ai: 1, ts: Date.now() });
+      }
+      messages.push({ id: -2, type: 'ai', content: '⚠ ' + (err.message || 'שגיאת AI'), ts: Date.now() });
+      renderMessages();
+    }
+  } else {
+    try {
+      await window.mavenFetch('/api/rooms/' + currentRoom.id + '/messages', {
+        method: 'POST',
+        body: JSON.stringify({ content: text }),
+      });
+      await loadMessages();
+      renderMessages();
+      renderAIStats();
+    } catch (err) {
+      alert('שליחה נכשלה: ' + err.message);
+    }
+  }
+  $('sendBtn').disabled = false;
+  inp.disabled = false;
+  inp.focus();
+}
+
+// ── ORGANIZE ──
+async function organize() {
+  if (!currentRoom) return;
+  const btn = $('organizeBtn');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'קורא…';
+  try {
+    const r = await window.mavenFetch('/api/rooms/' + currentRoom.id + '/organize', { method: 'POST' });
+    if (r.notes && r.notes.content) renderNotes(r.notes.content);
+  } catch (e) {
+    alert('שגיאה: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = orig;
+}
+
+// ── ROOM MODAL ──
+function showRoomModal(withWelcome) {
+  $('roomModal').classList.add('open');
+  // hide pro panel if user is a student
+  if (me && me.role === 'student') {
+    $('proPanel').style.display = 'none';
+    $('roomModalTitle').textContent = 'הצטרף לקהילה';
+    $('roomModalBody').textContent = 'הכנס את קוד ההזמנה שקיבלת מהמורה כדי להצטרף לקהילה.';
+  } else {
+    $('proPanel').style.display = 'block';
+    $('roomModalTitle').textContent = 'פתח קהילה ראשונה';
+    $('roomModalBody').textContent = 'תן שם לקהילה. תוך 30 שניות יהיה לך קוד הזמנה לשתף עם התלמידים שלך.';
+  }
+  if (withWelcome) {
+    $('welcomeModal').classList.remove('open');
+  }
+  setTimeout(() => ($('newRoomName') || $('joinCodeInput'))?.focus(), 100);
+}
+function hideRoomModal() { $('roomModal').classList.remove('open'); $('roomModalError').style.display = 'none'; }
+function showRoomError(msg) {
+  const el = $('roomModalError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function doCreateRoom() {
+  const name = $('newRoomName').value.trim();
+  const topic = $('newRoomTopic').value.trim();
+  if (!name) return showRoomError('שם הקהילה נדרש');
+  try {
+    const r = await window.mavenFetch('/api/rooms', { method: 'POST', body: JSON.stringify({ name, topic }) });
+    hideRoomModal();
+    $('newRoomName').value = ''; $('newRoomTopic').value = '';
+    await loadRooms();
+    await selectRoom(r.room.id);
+  } catch (e) { showRoomError(e.message); }
+}
+async function doJoinRoom() {
+  const code = $('joinCodeInput').value.trim().toUpperCase();
+  if (!code) return showRoomError('קוד הזמנה נדרש');
+  try {
+    const r = await window.mavenFetch('/api/rooms/join', { method: 'POST', body: JSON.stringify({ code }) });
+    hideRoomModal();
+    $('joinCodeInput').value = '';
+    await loadRooms();
+    await selectRoom(r.room.id);
+  } catch (e) { showRoomError(e.message); }
+}
+
+// ── EVENT WIRING ──
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    const row = $('composerRow'), inp = $('composerInput');
+    if (mode === 'ai') { row.classList.add('ai-mode'); inp.placeholder = 'שאל את Maven AI…'; }
+    else { row.classList.remove('ai-mode'); inp.placeholder = 'הודעה לקהילה…'; }
+    inp.focus();
+  });
+});
+
+$('sendBtn').addEventListener('click', send);
+$('composerInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+$('organizeBtn').addEventListener('click', organize);
+$('qaOrganize').addEventListener('click', organize);
+
+$('newRoomBtn').addEventListener('click', () => showRoomModal());
+$('qaJoinRoom').addEventListener('click', () => showRoomModal());
+
+$('copyCodeBtn').addEventListener('click', async () => {
+  if (!currentRoom) return;
+  const base = location.origin + location.pathname.replace(/chat\.html$/, '');
+  const link = `${base}login.html?signup=1&code=${currentRoom.invite_code}`;
+  const text = `הצטרפו לקהילה "${currentRoom.name}" ב-Maven:\n${link}\n(קוד הזמנה: ${currentRoom.invite_code})`;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = $('copyCodeBtn');
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    setTimeout(() => btn.textContent = orig, 1500);
+    alert('קישור ההזמנה הועתק — הדבק אותו בוואטסאפ / מייל:\n\n' + link);
+  } catch {
+    prompt('העתק את קישור ההזמנה:', link);
+  }
+});
+$('qaCopyCode').addEventListener('click', () => $('copyCodeBtn').click());
+
+$('logoutBtn').addEventListener('click', async () => {
+  if (!confirm('להתנתק?')) return;
+  try { await window.mavenFetch('/api/auth/logout', { method: 'POST' }); } catch {}
+  location.href = 'login.html';
+});
+
+$('closeWelcome').addEventListener('click', () => $('welcomeModal').classList.remove('open'));
+$('startBtn').addEventListener('click', () => {
+  $('welcomeModal').classList.remove('open');
+  if (rooms.length === 0) showRoomModal();
+});
+
+$('closeRoomModal').addEventListener('click', hideRoomModal);
+$('doCreateRoom').addEventListener('click', doCreateRoom);
+$('doJoinRoom').addEventListener('click', doJoinRoom);
+$('newRoomName').addEventListener('keydown', e => { if (e.key === 'Enter') doCreateRoom(); });
+$('newRoomTopic').addEventListener('keydown', e => { if (e.key === 'Enter') doCreateRoom(); });
+$('joinCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') doJoinRoom(); });
+
+// ── CONNECT CLAUDE ──
+// Parses a Claude conversation export (downloaded from claude.ai → Settings → Privacy → Export)
+// into a condensed, server-storable shape that the AI uses to mimic the professional's style.
+function parseClaudeExport(jsonText) {
+  let data;
+  try { data = JSON.parse(jsonText); } catch (e) { throw new Error('הקובץ לא JSON תקין. הייצוא מ-claude.ai מגיע כקובץ ZIP — פתח אותו ובחר את הקובץ conversations.json.'); }
+  // Claude's export can come in a few shapes — handle the common ones
+  let convs = data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    convs = data.conversations || data.chat_messages || data.data || data;
+    if (!Array.isArray(convs)) {
+      // try to find an array property
+      for (const k of Object.keys(data)) if (Array.isArray(data[k])) { convs = data[k]; break; }
+    }
+  }
+  if (!Array.isArray(convs)) throw new Error('לא מצאתי שיחות בקובץ. ודא שזה הקובץ שיוצא מ-claude.ai → Settings → Privacy → Export.');
+
+  const out = [];
+  for (const c of convs) {
+    if (!c || typeof c !== 'object') continue;
+    const title = c.name || c.title || c.summary || 'שיחה';
+    const date = c.created_at || c.updated_at || c.timestamp || '';
+    let msgs = c.chat_messages || c.messages || c.turns || [];
+    if (!Array.isArray(msgs)) continue;
+    const messages = msgs.map(m => {
+      let role = m.sender === 'human' || m.role === 'user' ? 'user' : 'assistant';
+      // text might be in m.text, m.content, m.message, or nested
+      let content = '';
+      if (typeof m.text === 'string') content = m.text;
+      else if (typeof m.content === 'string') content = m.content;
+      else if (Array.isArray(m.content)) content = m.content.map(c2 => c2.text || c2.content || '').filter(Boolean).join('\n');
+      else if (m.message) content = String(m.message);
+      return content.trim() ? { role, content } : null;
+    }).filter(Boolean);
+    if (messages.length > 0) {
+      out.push({
+        title: String(title).slice(0, 200),
+        date: String(date).slice(0, 30),
+        // keep the upload small — the server only uses the most recent part anyway
+        messages: messages.slice(-20).map(m => ({ role: m.role, content: m.content.slice(0, 2000) })),
+      });
+    }
+  }
+  out.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  return out.slice(-60);
+}
+
+async function refreshClaudeStatus() {
+  try {
+    const r = await window.mavenFetch('/api/me/claude-import');
+    const label = $('claudeBtnLabel');
+    if (r.connected) {
+      label.textContent = `Claude מחובר · ${r.messageCount} הודעות`;
+      label.parentElement.style.color = 'var(--indigo)';
+    } else {
+      label.textContent = 'חבר את Claude שלי';
+      label.parentElement.style.color = '';
+    }
+  } catch {}
+}
+
+async function uploadClaudeHistory(file) {
+  const btn = $('qaConnectClaude');
+  const label = $('claudeBtnLabel');
+  const origLabel = label.textContent;
+  btn.disabled = true;
+  label.textContent = 'קורא את הקובץ…';
+  try {
+    const text = await file.text();
+    label.textContent = 'מנתח שיחות…';
+    const conversations = parseClaudeExport(text);
+    if (!conversations.length) throw new Error('הקובץ לא הכיל שיחות עם הודעות');
+    label.textContent = `שולח ${conversations.length} שיחות…`;
+    const r = await window.mavenFetch('/api/me/claude-import', {
+      method: 'POST',
+      body: JSON.stringify({ conversations }),
+    });
+    alert(`חיבור הצליח! ${r.conversationCount} שיחות, ${r.messageCount} הודעות נטענו.\n\nה-AI של הקהילה ילמד את הסגנון שלך מעכשיו.`);
+    await refreshClaudeStatus();
+  } catch (e) {
+    alert('שגיאה: ' + e.message);
+    label.textContent = origLabel;
+  }
+  btn.disabled = false;
+}
+
+$('qaConnectClaude').addEventListener('click', () => {
+  if (me && me.role !== 'professional') {
+    alert('רק מורה יכול לחבר את חשבון Claude שלו. מנהל הקהילה יוסיף את ההיסטוריה שלו.');
+    return;
+  }
+  $('claudeFile').click();
+});
+$('claudeFile').addEventListener('change', e => {
+  const f = e.target.files?.[0];
+  if (f) uploadClaudeHistory(f);
+  e.target.value = '';
+});
+
+// ── mobile drawers ──
+const closeDrawers = () => document.body.classList.remove('show-rooms', 'show-right');
+$('openRoomsBtn').addEventListener('click', () => { document.body.classList.remove('show-right'); document.body.classList.toggle('show-rooms'); });
+$('openRightBtn').addEventListener('click', () => { document.body.classList.remove('show-rooms'); document.body.classList.toggle('show-right'); });
+$('drawerScrim').addEventListener('click', closeDrawers);
+$('roomsList').addEventListener('click', e => { if (e.target.closest('.room')) closeDrawers(); });
+$('roomsNewBtn').addEventListener('click', () => { closeDrawers(); showRoomModal(); });
+['qaOrganize', 'qaJoinRoom'].forEach(id => $(id).addEventListener('click', closeDrawers));
+
+// ── GO ──
+boot().then(() => refreshClaudeStatus());
+</script>
+
+</body>
+</html>

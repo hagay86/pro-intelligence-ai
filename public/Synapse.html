@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Synapse — Standalone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-0: #05060f;
+    --bg-2: rgba(20, 22, 45, 0.55);
+    --bg-3: rgba(15, 17, 35, 0.7);
+    --border: rgba(120, 130, 255, 0.18);
+    --border-soft: rgba(120, 130, 255, 0.1);
+    --text: #e4e7f1;
+    --text-dim: #94a3b8;
+    --text-faint: #64748b;
+    --violet: #8b5cf6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --grad-ai: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg-0); height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 50% at 30% 0%, rgba(139, 92, 246, 0.18), transparent 50%),
+      radial-gradient(ellipse 80% 50% at 70% 100%, rgba(6, 182, 212, 0.15), transparent 50%),
+      var(--bg-0);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(120, 130, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 130, 255, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+    z-index: 0;
+  }
+  .app { position: relative; z-index: 1; display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+
+  /* top bar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 22px;
+    background: rgba(8, 9, 22, 0.7);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 18px; }
+  .logo { display: flex; align-items: center; gap: 11px; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    color: white; font-weight: 700; font-size: 15px;
+    box-shadow: 0 0 24px rgba(139, 92, 246, 0.55);
+  }
+  .logo-text { font-weight: 600; font-size: 16px; }
+  .tag {
+    font-size: 10px; padding: 3px 8px; border-radius: 999px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #c4b5fd; margin-left: 6px; letter-spacing: 0.6px; font-weight: 600;
+  }
+  .room-name {
+    margin-left: 12px; padding-left: 18px;
+    border-left: 1px solid var(--border);
+    font-size: 13px; color: var(--text-dim);
+  }
+  .room-name b { color: white; font-weight: 500; }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 12px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 999px;
+    font-size: 11.5px; color: #86efac;
+  }
+  .status-pill.warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); color: #fbbf24; cursor: pointer; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s ease-in-out infinite; }
+  .status-pill.warn .dot { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .identity {
+    display: flex; align-items: center; gap: 9px;
+    padding: 5px 12px 5px 5px;
+    background: rgba(15, 17, 35, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12.5px;
+    cursor: pointer;
+    position: relative;
+  }
+  .identity:hover { border-color: rgba(139, 92, 246, 0.45); }
+  .identity-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: white;
+  }
+  .c-violet { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+  .c-cyan   { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+  .c-blue   { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+  .c-green  { background: linear-gradient(135deg, #10b981, #06b6d4); }
+  .c-pink   { background: linear-gradient(135deg, #ec4899, #f97316); }
+  .c-amber  { background: linear-gradient(135deg, #f59e0b, #ec4899); }
+  .c-ai     { background: var(--grad-ai); }
+  .identity-info { display: flex; flex-direction: column; gap: 1px; line-height: 1; }
+  .identity-name { font-weight: 500; font-size: 12.5px; }
+  .identity-role { font-size: 9.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.7px; }
+  .identity-caret { color: var(--text-faint); font-size: 10px; padding-left: 2px; }
+
+  .icon-btn {
+    width: 32px; height: 32px;
+    background: rgba(15,17,35,0.6);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: grid; place-items: center;
+    font-size: 14px; font-family: inherit;
+  }
+  .icon-btn:hover { background: rgba(139,92,246,0.1); color: white; }
+
+  .menu {
+    position: absolute;
+    top: 100%; right: 0; margin-top: 6px;
+    background: rgba(15, 17, 35, 0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 5px;
+    min-width: 220px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    z-index: 100;
+    display: none;
+  }
+  .menu.open { display: block; }
+  .menu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    cursor: pointer; font-size: 13px;
+  }
+  .menu-item:hover { background: rgba(139, 92, 246, 0.12); }
+  .menu-item.current { background: rgba(139, 92, 246, 0.15); }
+  .menu-item .check { margin-left: auto; color: var(--violet); font-size: 11px; opacity: 0; }
+  .menu-item.current .check { opacity: 1; }
+  .menu-divider { height: 1px; background: var(--border-soft); margin: 4px 6px; }
+
+  /* layout */
+  .main {
+    display: grid;
+    grid-template-columns: 260px 1fr 340px;
+    min-height: 0;
+  }
+  @media (max-width: 1200px) { .main { grid-template-columns: 220px 1fr 300px; } }
+  @media (max-width: 980px)  { .main { grid-template-columns: 220px 1fr; } .notes-pane { display: none; } }
+  @media (max-width: 760px)  { .main { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  /* sidebar */
+  .sidebar {
+    background: rgba(8, 9, 22, 0.5);
+    border-right: 1px solid var(--border-soft);
+    padding: 18px 14px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .sidebar h3 {
+    font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--text-faint); font-weight: 600;
+    padding: 0 8px; margin-bottom: 4px;
+  }
+  .ai-member {
+    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.06));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 0 20px rgba(139,92,246,0.15);
+  }
+  .ai-orb {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    color: white; font-size: 11px; font-weight: 700;
+    box-shadow: 0 0 14px rgba(139,92,246,0.55);
+  }
+  .ai-member-info { flex: 1; }
+  .ai-member-name { font-size: 12.5px; font-weight: 600; }
+  .ai-member-status { font-size: 10px; color: #c4b5fd; }
+  .member {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px; border-radius: 9px;
+    cursor: pointer;
+  }
+  .member:hover { background: rgba(139,92,246,0.06); }
+  .member.me { background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); }
+  .member-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: white;
+    flex-shrink: 0; position: relative;
+  }
+  .member-avatar::after {
+    content: ''; position: absolute; bottom: -1px; right: -1px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--bg-0);
+  }
+  .member-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .member-role { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.6px; }
+  .member.prof .member-role { color: #c4b5fd; }
+
+  /* chat */
+  .chat-pane {
+    display: flex; flex-direction: column;
+    min-height: 0;
+    background: rgba(8, 9, 22, 0.3);
+  }
+  .chat-head {
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .chat-head h2 { font-size: 15px; font-weight: 600; }
+  .chat-head .sub { font-size: 12px; color: var(--text-dim); }
+
+  .api-banner {
+    background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.05));
+    border-bottom: 1px solid rgba(245,158,11,0.3);
+    color: #fbbf24;
+    padding: 11px 22px;
+    font-size: 12.5px;
+    display: none;
+    align-items: center; gap: 12px;
+  }
+  .api-banner.show { display: flex; }
+  .api-banner b { color: #fef3c7; }
+  .api-banner button {
+    margin-left: auto;
+    background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2));
+    border: 1px solid rgba(139,92,246,0.4);
+    color: white;
+    padding: 5px 12px; border-radius: 7px;
+    font-size: 11.5px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .api-banner button:hover { background: linear-gradient(135deg, rgba(139,92,246,0.45), rgba(6,182,212,0.3)); }
+
+  .messages {
+    flex: 1; overflow-y: auto;
+    padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 18px;
+    scroll-behavior: smooth;
+  }
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.2); border-radius: 4px; }
+
+  .day-divider {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-faint); font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    margin: 4px 0 2px;
+  }
+  .day-divider::before, .day-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-soft); }
+
+  .empty {
+    margin: auto;
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-faint);
+    font-size: 13px; line-height: 1.6;
+  }
+  .empty b { color: var(--text-dim); }
+
+  .msg { display: flex; gap: 12px; animation: slideIn 0.35s ease; max-width: 100%; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+  .msg-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+  .msg-meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+  .msg-name { font-weight: 600; color: var(--text); }
+  .msg-role-tag {
+    font-size: 9px; padding: 1px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700;
+  }
+  .msg-role-tag.prof {
+    background: rgba(139,92,246,0.18);
+    border: 1px solid rgba(139,92,246,0.35);
+    color: #c4b5fd;
+  }
+  .msg-time { color: var(--text-faint); font-size: 11px; }
+  .msg-text {
+    font-size: 14px; line-height: 1.55; color: #d6dbe8;
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .msg-asked-ai {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; color: #c4b5fd;
+    padding: 1px 7px; border-radius: 5px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.25);
+    margin-left: 4px;
+    font-weight: 600;
+  }
+  .msg.ai {
+    background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.05));
+    border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 14px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .msg.ai::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0;
+    width: 2px; background: var(--grad-ai);
+    box-shadow: 0 0 12px rgba(139,92,246,0.6);
+  }
+  .msg.ai .msg-avatar { background: var(--grad-ai); box-shadow: 0 0 14px rgba(139,92,246,0.55); }
+  .msg.ai .ai-tag {
+    font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    color: #c4b5fd;
+    padding: 2px 7px; border-radius: 5px;
+    background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.3);
+    font-weight: 600;
+  }
+  .msg.ai .msg-text strong { color: #c4b5fd; font-weight: 600; }
+  .msg.ai .msg-text code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+    background: rgba(6,182,212,0.1);
+    border: 1px solid rgba(6,182,212,0.25);
+    color: #67e8f9;
+    padding: 1px 6px; border-radius: 4px;
+  }
+  .typing {
+    display: flex; align-items: center; gap: 12px;
+    align-self: stretch;
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 12px; color: var(--text-dim);
+  }
+  .typing-orb {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--grad-ai);
+    box-shadow: 0 0 12px rgba(139,92,246,0.5);
+    animation: orb 1.6s ease-in-out infinite;
+  }
+  @keyframes orb {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); box-shadow: 0 0 18px rgba(139,92,246,0.7); }
+  }
+  .typing-dots { display: flex; gap: 4px; margin-left: auto; }
+  .typing-dots span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #c4b5fd;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-4px); opacity: 1; } }
+
+  /* input */
+  .input-wrap {
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--border-soft);
+    background: rgba(8, 9, 22, 0.4);
+  }
+  .input-row {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px 8px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-row.ai-mode {
+    border-color: rgba(139,92,246,0.5);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.12), 0 0 20px rgba(139,92,246,0.18);
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));
+  }
+  .input-row:focus-within { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+  .input-row input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: white; font-size: 14px; font-family: inherit;
+    padding: 8px 0;
+  }
+  .input-row input::placeholder { color: var(--text-faint); }
+  .input-mode {
+    display: flex; gap: 2px;
+    background: rgba(20,22,45,0.6);
+    border-radius: 9px; padding: 2px;
+  }
+  .mode-btn {
+    font-size: 11.5px; padding: 6px 10px; border-radius: 7px;
+    cursor: pointer; color: var(--text-dim);
+    border: none; background: transparent; font-weight: 500;
+    font-family: inherit;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .mode-btn.active { background: var(--grad-ai); color: white; box-shadow: 0 0 12px rgba(139,92,246,0.4); }
+  .send-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    border: none; background: var(--grad-ai); color: white; cursor: pointer;
+    display: grid; place-items: center; font-size: 14px;
+    box-shadow: 0 0 16px rgba(139,92,246,0.4);
+  }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  .send-btn:hover:not(:disabled) { transform: translateY(-1px); }
+
+  /* notes pane */
+  .notes-pane {
+    background: rgba(8, 9, 22, 0.5);
+    border-left: 1px solid var(--border-soft);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .notes-head {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .notes-head h3 {
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .notes-head h3 .badge {
+    width: 22px; height: 22px; border-radius: 7px;
+    background: var(--grad-ai);
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: white;
+    box-shadow: 0 0 12px rgba(139,92,246,0.5);
+  }
+  .organize-btn {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.15));
+    border: 1px solid rgba(139,92,246,0.4);
+    border-radius: 8px;
+    color: #c4b5fd;
+    font-size: 11.5px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .organize-btn:hover:not(:disabled) { background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.22)); color: white; }
+  .organize-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .notes-body {
+    flex: 1; overflow-y: auto;
+    padding: 18px;
+    font-size: 12.5px; line-height: 1.6;
+    color: #cbd5e1;
+  }
+  .notes-body::-webkit-scrollbar { width: 6px; }
+  .notes-body::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.2); border-radius: 4px; }
+  .notes-body h2 {
+    font-size: 11.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: #c4b5fd; font-weight: 700;
+    margin: 18px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(139,92,246,0.2);
+  }
+  .notes-body h2:first-child { margin-top: 0; }
+  .notes-body ul { list-style: none; padding: 0; margin: 0 0 4px; }
+  .notes-body li {
+    padding: 6px 0 6px 16px;
+    position: relative;
+    color: #d6dbe8;
+  }
+  .notes-body li::before {
+    content: '▸';
+    position: absolute; left: 0; top: 6px;
+    color: rgba(139,92,246,0.6); font-size: 10px;
+  }
+  .notes-body strong { color: white; font-weight: 600; }
+  .notes-empty {
+    text-align: center; padding: 30px 14px;
+    color: var(--text-faint); font-size: 12px;
+    line-height: 1.6;
+  }
+  .notes-empty b { color: var(--text-dim); }
+  .notes-meta {
+    padding: 10px 18px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 10.5px;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; justify-content: space-between;
+  }
+
+  /* modal */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(5, 6, 15, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--bg-2);
+    backdrop-filter: blur(28px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    max-width: 520px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+  .modal::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    opacity: 0.7;
+  }
+  .modal h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .modal p.sub { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+  .modal p.sub a { color: #c4b5fd; text-decoration: underline; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 28px; height: 28px;
+    background: rgba(15,17,35,0.6);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer; color: var(--text-dim);
+    font-family: inherit; font-size: 14px;
+    display: grid; place-items: center;
+  }
+  .modal-close:hover { color: white; border-color: rgba(239,68,68,0.4); }
+  .field { margin-bottom: 16px; }
+  .label {
+    display: block;
+    font-size: 11.5px; font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 7px;
+  }
+  .input {
+    width: 100%;
+    background: rgba(8, 9, 22, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 12px 14px;
+    color: white;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input::placeholder { color: var(--text-faint); }
+  .input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+  .key-status {
+    display: flex; align-items: center; gap: 9px;
+    padding: 10px 13px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 9px;
+    font-size: 12.5px;
+    color: #86efac;
+    margin-bottom: 14px;
+  }
+  .key-status.missing { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); color: #fbbf24; }
+  .key-status code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: inherit; }
+  .btn {
+    padding: 11px 18px;
+    border-radius: 11px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex; align-items: center; gap: 8px;
+    justify-content: center;
+    transition: transform 0.1s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--grad-ai);
+    color: white;
+    box-shadow: 0 0 18px rgba(139,92,246,0.4);
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 26px rgba(139,92,246,0.55); }
+  .btn-ghost {
+    background: rgba(15,17,35,0.6);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .btn-ghost:hover { color: white; border-color: rgba(139,92,246,0.4); }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(15,17,35,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 12.5px;
+    color: var(--text);
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <div class="logo-mark">S</div>
+        <div><span class="logo-text">Synapse</span><span class="tag">STANDALONE</span></div>
+      </div>
+      <div class="room-name"><b id="roomLabel">Digital Advertising Mastery · Cohort #3</b></div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill warn" id="connStatus" title="Click to add API key">
+        <span class="dot"></span><span id="connText">No API key</span>
+      </div>
+      <div class="identity" id="identityBtn">
+        <div class="identity-avatar c-violet" id="myAvatar">HD</div>
+        <div class="identity-info">
+          <span class="identity-name" id="myName">Hagay Dardik</span>
+          <span class="identity-role" id="myRole">Professional</span>
+        </div>
+        <span class="identity-caret">▾</span>
+        <div class="menu" id="identityMenu"></div>
+      </div>
+      <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <aside class="sidebar">
+      <div class="ai-member">
+        <div class="ai-orb">AI</div>
+        <div class="ai-member-info">
+          <div class="ai-member-name">Synapse AI</div>
+          <div class="ai-member-status">listening · remembers everything</div>
+        </div>
+      </div>
+      <div>
+        <h3>Professional</h3>
+        <div id="membersProf"></div>
+      </div>
+      <div>
+        <h3>Students <span id="studentCount" style="text-transform:none;letter-spacing:0;color:var(--text-faint);">·</span></h3>
+        <div id="membersStud"></div>
+      </div>
+    </aside>
+
+    <section class="chat-pane">
+      <div class="chat-head">
+        <h2 id="chatTitle"># digital-advertising-mastery</h2>
+        <div class="sub">Everything written here is remembered. Switch identity (top-right) to post as different members. Ask the AI anything.</div>
+      </div>
+
+      <div class="api-banner" id="apiBanner">
+        ⚠ <span><b>Claude Code isn't logged in yet.</b> Look at the Terminal window from <code style="font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:4px;color:#fef3c7;">start.command</code> — it has instructions to authenticate (one-click in your browser).</span>
+        <button id="apiBannerBtn">Re-check</button>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="input-wrap">
+        <div class="input-row" id="inputRow">
+          <div class="input-mode">
+            <button class="mode-btn active" data-mode="chat">💬 Post</button>
+            <button class="mode-btn" data-mode="ai">✨ Ask AI</button>
+          </div>
+          <input type="text" id="msgInput" placeholder="Message the cohort…" autocomplete="off" />
+          <button class="send-btn" id="sendBtn">↑</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="notes-pane">
+      <div class="notes-head">
+        <h3><span class="badge">AI</span>What the AI knows</h3>
+        <button class="organize-btn" id="organizeBtn">
+          <span id="organizeIcon">⟲</span> <span id="organizeLabel">Organize</span>
+        </button>
+      </div>
+      <div class="notes-body" id="notesBody">
+        <div class="notes-empty">
+          <b>No notes yet.</b><br>
+          Click <b>Organize</b> to have the AI<br>read the chat and structure<br>what's been discussed.
+        </div>
+      </div>
+      <div class="notes-meta">
+        <span id="notesCount">0 messages</span>
+        <span id="notesAge">—</span>
+      </div>
+    </aside>
+  </main>
+
+</div>
+
+<!-- settings modal -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" id="closeSettings">✕</button>
+    <h2>Settings</h2>
+    <p class="sub">Synapse uses your <strong style="color:white;">Claude Pro/Max subscription</strong> via Claude Code running locally. No API key needed.</p>
+
+    <div class="key-status" id="keyStatus">
+      <span class="dot"></span>
+      Connecting to your Claude subscription…
+    </div>
+
+    <div class="field">
+      <label class="label">Model</label>
+      <select class="input" id="modelSelect" style="appearance:auto;">
+        <option value="claude-sonnet-4-5">Claude Sonnet 4.5 — recommended</option>
+        <option value="claude-opus-4-5">Claude Opus 4.5 — slower, smarter</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — faster, cheaper</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="label">Danger zone</label>
+      <button class="btn btn-ghost" id="resetBtn" style="width:100%;">Reset everything (wipe chat, notes, members)</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button class="btn btn-primary" id="saveKeyBtn" style="flex:1;">Save & close</button>
+      <button class="btn btn-ghost" id="closeSettings2">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─── storage layer (localStorage) ───
+  const STORE = {
+    settings: () => {
+      try { return JSON.parse(localStorage.getItem('synapse:settings') || '{}'); }
+      catch { return {}; }
+    },
+    saveSettings: (s) => localStorage.setItem('synapse:settings', JSON.stringify(s)),
+    members: () => {
+      try { return JSON.parse(localStorage.getItem('synapse:members') || '[]'); }
+      catch { return []; }
+    },
+    saveMembers: (m) => localStorage.setItem('synapse:members', JSON.stringify(m)),
+    messages: () => {
+      try { return JSON.parse(localStorage.getItem('synapse:messages') || '[]'); }
+      catch { return []; }
+    },
+    saveMessages: (m) => localStorage.setItem('synapse:messages', JSON.stringify(m)),
+    notes: () => {
+      try { return JSON.parse(localStorage.getItem('synapse:notes') || '{}'); }
+      catch { return {}; }
+    },
+    saveNotes: (n) => localStorage.setItem('synapse:notes', JSON.stringify(n)),
+  };
+
+  // ─── defaults ───
+  const DEFAULT_MEMBERS = [
+    { id: 'hagay', name: 'Hagay Dardik', role: 'professional', color: 'violet' },
+    { id: 'maya', name: 'Maya K.', role: 'student', color: 'cyan' },
+    { id: 'jordan', name: 'Jordan R.', role: 'student', color: 'blue' },
+    { id: 'sam', name: 'Sam L.', role: 'student', color: 'green' },
+    { id: 'priya', name: 'Priya M.', role: 'student', color: 'pink' },
+    { id: 'omar', name: 'Omar B.', role: 'student', color: 'amber' },
+  ];
+
+  function seedSampleMessages() {
+    const now = Date.now();
+    return [
+      { id: 1, authorId: 'hagay', author: 'Hagay Dardik', role: 'professional',
+        content: `Morning class 👋 Today we're breaking down creative testing for cold audiences. Drop questions in the chat — I'll answer, and the AI will keep notes on everything so you can ask later.`,
+        ts: now - 3600000 * 3, type: 'human' },
+      { id: 2, authorId: 'maya', author: 'Maya K.', role: 'student',
+        content: `How do you decide budget per creative when testing cold? I keep over-allocating to losers.`,
+        ts: now - 3600000 * 3 + 60000, type: 'human' },
+      { id: 3, authorId: 'hagay', author: 'Hagay Dardik', role: 'professional',
+        content: `My default: $50/day per creative, 48 hour minimum before judging anything. Kill below 1.2% CTR on cold, double winners that hit 2%+. Max 4 creatives per ad set — Meta under-distributes above that. Learned this the hard way burning $8K on over-segmented tests in Q4.`,
+        ts: now - 3600000 * 3 + 180000, type: 'human' },
+      { id: 4, authorId: 'jordan', author: 'Jordan R.', role: 'student',
+        content: `Does the 48-hour rule still apply if the campaign hits significance earlier?`,
+        ts: now - 3600000 * 2, type: 'human' },
+      { id: 5, authorId: 'hagay', author: 'Hagay Dardik', role: 'professional',
+        content: `Even with early significance I wait. Day-parting hides itself before 48h — you might be reading evening performance and miss that mornings are killing the average.`,
+        ts: now - 3600000 * 2 + 90000, type: 'human' },
+      { id: 6, authorId: 'hagay', author: 'Hagay Dardik', role: 'professional',
+        content: `One more rule for your playbook: Audience Network OFF by default for any health, fitness, or trial-based offer. Half the CPM of Feed but 3x higher post-purchase CAC. Incentivized traffic from game ad networks reskinning the offers.`,
+        ts: now - 3600000 * 2 + 200000, type: 'human' },
+      { id: 7, authorId: 'priya', author: 'Priya M.', role: 'student',
+        content: `What about hook formulas for the first 3 seconds? My thumbstop ratio is bad across the board.`,
+        ts: now - 1800000, type: 'human' },
+    ];
+  }
+
+  function initStorage() {
+    if (!STORE.members().length) STORE.saveMembers(DEFAULT_MEMBERS);
+    if (!STORE.messages().length) STORE.saveMessages(seedSampleMessages());
+    const s = STORE.settings();
+    if (!s.currentIdentity) {
+      s.currentIdentity = 'hagay';
+      s.model = 'claude-sonnet-4-5';
+      STORE.saveSettings(s);
+    }
+  }
+  initStorage();
+
+  // ─── state ───
+  let members = STORE.members();
+  let messages = STORE.messages();
+  let notes = STORE.notes();
+  let settings = STORE.settings();
+  let me = members.find(m => m.id === settings.currentIdentity) || members[0];
+  let mode = 'chat';
+
+  // ─── helpers ───
+  const $ = (id) => document.getElementById(id);
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const fmtDay = (ts) => new Date(ts).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  const ago = (ts) => {
+    if (!ts) return 'never';
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+  };
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const formatRich = (s) => {
+    let h = escapeHtml(s);
+    h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    h = h.replace(/`([^`]+?)`/g, '<code>$1</code>');
+    return h;
+  };
+  const formatNotes = (md) => {
+    const lines = md.split('\n');
+    let html = ''; let inList = false;
+    for (const line of lines) {
+      const trim = line.trim();
+      if (/^##\s+/.test(trim)) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<h2>${formatRich(trim.replace(/^##\s+/, ''))}</h2>`;
+      } else if (/^[-*]\s+/.test(trim)) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += `<li>${formatRich(trim.replace(/^[-*]\s+/, ''))}</li>`;
+      } else if (trim) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<p>${formatRich(trim)}</p>`;
+      }
+    }
+    if (inList) html += '</ul>';
+    return html;
+  };
+  const initials = (name) => name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const toast = (msg) => {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 2600);
+  };
+
+  // ─── Talk to the local Synapse server, which uses your Claude Pro/Max subscription
+  // via Claude Code under the hood. No API key needed.
+  async function callClaude({ system, prompt, kind = 'ask' }) {
+    if (location.protocol === 'file:') {
+      throw new Error(`This page needs to run on http://localhost, not file://.
+
+Close this tab, then in Finder double-click "start.command" — it starts the local server and opens the right URL automatically.`);
+    }
+
+    const endpoint = kind === 'organize' ? '/api/standalone/organize' : '/api/standalone/ask';
+    let r, data;
+    try {
+      r = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(kind === 'organize'
+          ? { prompt }
+          : { systemPrompt: system, question: prompt }
+        ),
+      });
+      data = await r.json();
+    } catch (e) {
+      throw new Error(`Local Synapse server unreachable. Restart it by double-clicking "start.command" again.`);
+    }
+    if (!r.ok) {
+      throw new Error(data?.error || `Server returned HTTP ${r.status}`);
+    }
+    return data.reply;
+  }
+
+  // ─── prompts ───
+  function buildTranscript(msgs) {
+    return msgs.map(m => {
+      if (m.type === 'ai') return `[SYNAPSE AI]: ${m.content}`;
+      const tag = m.role === 'professional' ? ' · PROFESSIONAL' : '';
+      return `[${m.author}${tag}]: ${m.content}`;
+    }).join('\n\n');
+  }
+  function askSystemPrompt() {
+    const prof = members.find(m => m.role === 'professional');
+    const profName = prof?.name || 'the professional';
+    const transcript = buildTranscript(messages);
+    return `You are Synapse AI — the resident assistant inside a study group chat called "Digital Advertising Mastery · Cohort #3".
+
+The professional leading this room is ${profName}. Other participants are students learning from them.
+
+Your job:
+- Answer questions strictly grounded in what has been said in this chat.
+- Attribute things to who said them ("${profName} said earlier…", "Jordan asked about…").
+- If a topic hasn't been discussed, say so honestly — don't invent.
+- Keep answers tactical and concrete. Use light markdown (**bold**, bullets) where it helps.
+
+Here is the complete conversation so far:
+
+=== CHAT TRANSCRIPT ===
+${transcript || "(empty)"}
+=== END TRANSCRIPT ===`;
+  }
+  function organizePromptText() {
+    const prof = members.find(m => m.role === 'professional');
+    const profName = prof?.name || 'the professional';
+    const transcript = buildTranscript(messages);
+    return `You are organizing knowledge from a study group's chat transcript. The group is "Digital Advertising Mastery · Cohort #3", led by ${profName}.
+
+Read every message below and produce a structured, scannable summary. Use this exact format:
+
+## Topics covered
+- [topic]: 1-line description
+
+## Key rules & frameworks shared by ${profName}
+- [the rule/framework, with numbers if any]
+
+## Decisions & lessons learned
+- [decision/lesson with context]
+
+## Open questions from the cohort
+- [student name]: [question they asked that hasn't been answered]
+
+## Things ${profName} hasn't covered yet
+- [gap you notice — topics adjacent to the discussion but not explored]
+
+Keep each bullet to one line where possible. Be specific — include numbers, percentages, dollar amounts when they were mentioned. Don't invent — if the chat is thin, the summary should be thin.
+
+=== CHAT TRANSCRIPT ===
+${transcript || "(no messages yet)"}
+=== END TRANSCRIPT ===`;
+  }
+
+  // ─── render ───
+  async function refreshConnPill() {
+    const pill = $('connStatus');
+    pill.classList.add('warn');
+    $('connText').textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/standalone/status');
+      const data = await r.json();
+      if (data.ok) {
+        pill.classList.remove('warn');
+        $('connText').textContent = settings.model || 'claude-sonnet-4-5';
+        $('apiBanner').classList.remove('show');
+      } else {
+        pill.classList.add('warn');
+        $('connText').textContent = 'Claude Code not logged in';
+        $('apiBanner').classList.add('show');
+      }
+    } catch {
+      pill.classList.add('warn');
+      $('connText').textContent = 'Server offline';
+      $('apiBanner').classList.add('show');
+    }
+  }
+
+  function renderIdentity() {
+    $('myAvatar').textContent = initials(me.name);
+    $('myAvatar').className = 'identity-avatar c-' + me.color;
+    $('myName').textContent = me.name;
+    $('myRole').textContent = me.role === 'professional' ? 'Professional' : 'Student';
+  }
+
+  function renderIdentityMenu() {
+    $('identityMenu').innerHTML = members.map(m => `
+      <div class="menu-item ${me.id === m.id ? 'current' : ''}" data-id="${m.id}">
+        <div class="identity-avatar c-${m.color}">${initials(m.name)}</div>
+        <div style="display:flex;flex-direction:column;gap:1px;line-height:1;">
+          <span style="font-size:13px;font-weight:500;">${escapeHtml(m.name)}</span>
+          <span style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.7px;">${m.role}</span>
+        </div>
+        <span class="check">✓</span>
+      </div>`).join('') + `
+      <div class="menu-divider"></div>
+      <div class="menu-item" data-add-member style="color:#c4b5fd;">+ Add a member</div>
+    `;
+    document.querySelectorAll('#identityMenu .menu-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (el.dataset.addMember !== undefined) {
+          const name = prompt('Name for new member?');
+          if (!name?.trim()) return;
+          const role = confirm('Click OK for STUDENT, Cancel for PROFESSIONAL.') ? 'student' : 'professional';
+          const colors = ['violet','cyan','blue','green','pink','amber'];
+          const color = colors[members.length % colors.length];
+          const id = name.toLowerCase().replace(/\s+/g, '-').slice(0,12) + '-' + Math.random().toString(36).slice(2,5);
+          members.push({ id, name: name.trim(), role, color });
+          STORE.saveMembers(members);
+          me = members[members.length - 1];
+          settings.currentIdentity = me.id;
+          STORE.saveSettings(settings);
+          renderAll();
+        } else {
+          const m = members.find(x => x.id === el.dataset.id);
+          if (m) { me = m; settings.currentIdentity = m.id; STORE.saveSettings(settings); renderAll(); }
+        }
+        $('identityMenu').classList.remove('open');
+      });
+    });
+  }
+
+  function renderMembers() {
+    const prof = members.filter(m => m.role === 'professional');
+    const stud = members.filter(m => m.role === 'student');
+    $('studentCount').textContent = '· ' + stud.length;
+    $('membersProf').innerHTML = prof.map(m => `
+      <div class="member ${me.id === m.id ? 'me' : ''} prof" data-id="${m.id}">
+        <div class="member-avatar c-${m.color}">${initials(m.name)}</div>
+        <span class="member-name">${escapeHtml(m.name)}</span>
+        <span class="member-role">Pro</span>
+      </div>`).join('');
+    $('membersStud').innerHTML = stud.map(m => `
+      <div class="member ${me.id === m.id ? 'me' : ''}" data-id="${m.id}">
+        <div class="member-avatar c-${m.color}">${initials(m.name)}</div>
+        <span class="member-name">${escapeHtml(m.name)}</span>
+      </div>`).join('');
+    document.querySelectorAll('.sidebar .member').forEach(el => {
+      el.addEventListener('click', () => {
+        const m = members.find(x => x.id === el.dataset.id);
+        if (m) { me = m; settings.currentIdentity = m.id; STORE.saveSettings(settings); renderAll(); }
+      });
+    });
+  }
+
+  function renderMessages() {
+    const el = $('messages');
+    if (!messages.length) {
+      el.innerHTML = `<div class="empty"><b>No messages yet.</b><br>Start the conversation — switch identity from the top right to post as different members.</div>`;
+      return;
+    }
+    let html = ''; let lastDay = '';
+    for (const m of messages) {
+      const day = fmtDay(m.ts);
+      if (day !== lastDay) { html += `<div class="day-divider">${day}</div>`; lastDay = day; }
+      if (m.type === 'ai') {
+        const askedBy = members.find(x => x.id === m.askedBy);
+        html += `
+          <div class="msg ai">
+            <div class="msg-avatar">AI</div>
+            <div class="msg-body">
+              <div class="msg-meta">
+                <span class="msg-name">Synapse AI</span>
+                <span class="ai-tag">grounded in ${m.groundedIn || messages.length} msgs</span>
+                ${askedBy ? `<span style="font-size:11px;color:var(--text-faint);">answering ${escapeHtml(askedBy.name)}</span>` : ''}
+                <span class="msg-time" style="margin-left:auto;">${fmtTime(m.ts)}</span>
+              </div>
+              <div class="msg-text">${formatRich(m.content)}</div>
+            </div>
+          </div>`;
+      } else {
+        const member = members.find(x => x.id === m.authorId);
+        const color = member?.color || 'violet';
+        html += `
+          <div class="msg">
+            <div class="msg-avatar c-${color}">${initials(m.author)}</div>
+            <div class="msg-body">
+              <div class="msg-meta">
+                <span class="msg-name">${escapeHtml(m.author)}${m.authorId === me.id ? ' (you)' : ''}</span>
+                ${m.role === 'professional' ? '<span class="msg-role-tag prof">Professional</span>' : ''}
+                ${m.askedAI ? '<span class="msg-asked-ai">✨ asked AI</span>' : ''}
+                <span class="msg-time" style="margin-left:auto;">${fmtTime(m.ts)}</span>
+              </div>
+              <div class="msg-text">${escapeHtml(m.content)}</div>
+            </div>
+          </div>`;
+      }
+    }
+    el.innerHTML = html;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function renderNotes() {
+    const el = $('notesBody');
+    if (!notes.content || !notes.messageCount) {
+      el.innerHTML = `<div class="notes-empty"><b>No notes yet.</b><br>Click <b>Organize</b> to have the AI<br>read the chat and structure<br>what's been discussed.</div>`;
+    } else {
+      el.innerHTML = formatNotes(notes.content);
+    }
+    $('notesCount').textContent = `${messages.length} message${messages.length === 1 ? '' : 's'}`;
+    $('notesAge').textContent = notes.updatedAt ? `notes ${ago(notes.updatedAt)}` : 'not organized yet';
+  }
+
+  function renderAll() {
+    renderIdentity();
+    renderIdentityMenu();
+    renderMembers();
+    renderMessages();
+    renderNotes();
+    refreshConnPill();
+    updatePlaceholder();
+  }
+
+  function updatePlaceholder() {
+    const input = $('msgInput');
+    if (mode === 'ai') {
+      input.placeholder = `Ask the AI in front of the class — it answers from everything written here…`;
+      $('inputRow').classList.add('ai-mode');
+    } else {
+      input.placeholder = me.role === 'professional' ? 'Share with your cohort…' : 'Message the class…';
+      $('inputRow').classList.remove('ai-mode');
+    }
+  }
+
+  function showTyping() {
+    const el = $('messages');
+    if (document.getElementById('typing')) return;
+    const t = document.createElement('div');
+    t.id = 'typing';
+    t.className = 'typing';
+    t.innerHTML = `<div class="typing-orb"></div> Synapse AI is reading the chat… <div class="typing-dots"><span></span><span></span><span></span></div>`;
+    el.appendChild(t);
+    el.scrollTop = el.scrollHeight;
+  }
+  function hideTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+  // ─── actions ───
+  async function send() {
+    const input = $('msgInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    $('sendBtn').disabled = true; input.disabled = true;
+
+    const nextId = (messages[messages.length - 1]?.id || 0) + 1;
+    const userMsg = { id: nextId, authorId: me.id, author: me.name, role: me.role, content: text, ts: Date.now(), type: 'human', askedAI: mode === 'ai' };
+    messages.push(userMsg);
+    STORE.saveMessages(messages);
+    renderMessages();
+
+    if (mode === 'ai') {
+      showTyping();
+      try {
+        const reply = await callClaude({
+          system: askSystemPrompt(),
+          prompt: text,
+          kind: 'ask',
+        });
+        hideTyping();
+        messages.push({
+          id: nextId + 1,
+          authorId: 'ai', author: 'Synapse AI', role: 'ai',
+          content: reply, ts: Date.now(), type: 'ai',
+          askedBy: me.id, groundedIn: messages.length,
+        });
+        STORE.saveMessages(messages);
+        renderMessages();
+        renderNotes();
+      } catch (e) {
+        hideTyping();
+        messages.push({
+          id: nextId + 1,
+          authorId: 'ai', author: 'Synapse AI', role: 'ai',
+          content: '⚠ ' + e.message, ts: Date.now(), type: 'ai',
+          askedBy: me.id, groundedIn: messages.length,
+        });
+        STORE.saveMessages(messages);
+        renderMessages();
+      }
+    }
+
+    $('sendBtn').disabled = false; input.disabled = false;
+    input.focus();
+  }
+
+  async function organize() {
+    const btn = $('organizeBtn');
+    btn.disabled = true;
+    $('organizeIcon').textContent = '⟳';
+    $('organizeLabel').textContent = 'Reading chat…';
+    try {
+      if (!messages.length) {
+        notes = { content: 'No messages yet.', updatedAt: Date.now(), messageCount: 0 };
+        STORE.saveNotes(notes);
+        renderNotes();
+      } else {
+        const content = await callClaude({
+          prompt: organizePromptText(),
+          kind: 'organize',
+        });
+        notes = { content, updatedAt: Date.now(), messageCount: messages.length };
+        STORE.saveNotes(notes);
+        renderNotes();
+      }
+    } catch (e) { toast(e.message); }
+    btn.disabled = false;
+    $('organizeIcon').textContent = '⟲';
+    $('organizeLabel').textContent = 'Organize';
+  }
+
+  // ─── settings modal ───
+  async function openSettings() {
+    settings = STORE.settings();
+    $('modelSelect').value = settings.model || 'claude-sonnet-4-5';
+    $('settingsModal').classList.add('open');
+    // probe the server to see if subscription auth is wired
+    const ks = $('keyStatus');
+    ks.className = 'key-status';
+    ks.innerHTML = `<span class="dot"></span> Checking your Claude subscription…`;
+    try {
+      const r = await fetch('/api/standalone/status');
+      const data = await r.json();
+      if (data.ok && data.source === 'subscription') {
+        ks.className = 'key-status';
+        ks.innerHTML = `<span class="dot"></span> Connected via your Claude Pro/Max subscription`;
+      } else if (data.ok && data.source === 'api_key') {
+        ks.className = 'key-status';
+        ks.innerHTML = `<span class="dot"></span> Connected via Anthropic API key (fallback)`;
+      } else {
+        ks.className = 'key-status missing';
+        ks.innerHTML = `<span class="dot" style="background:var(--amber);box-shadow:0 0 8px var(--amber);"></span> Claude Code isn't authenticated yet — see start.command terminal for the next step.`;
+      }
+    } catch {
+      ks.className = 'key-status missing';
+      ks.innerHTML = `<span class="dot" style="background:var(--amber);box-shadow:0 0 8px var(--amber);"></span> Server not reachable. Close this tab and re-run start.command.`;
+    }
+  }
+  function closeSettings() { $('settingsModal').classList.remove('open'); }
+
+  function testAndSaveKey() {
+    const newModel = $('modelSelect').value;
+    settings = STORE.settings();
+    settings.model = newModel;
+    STORE.saveSettings(settings);
+    toast('Settings saved');
+    refreshConnPill();
+    closeSettings();
+  }
+
+  function resetEverything() {
+    if (!confirm('Wipe ALL chat, AI notes, and members? Your API key is kept. This cannot be undone.')) return;
+    localStorage.removeItem('synapse:messages');
+    localStorage.removeItem('synapse:members');
+    localStorage.removeItem('synapse:notes');
+    initStorage();
+    members = STORE.members();
+    messages = STORE.messages();
+    notes = STORE.notes();
+    me = members.find(m => m.id === STORE.settings().currentIdentity) || members[0];
+    renderAll();
+    closeSettings();
+    toast('Reset complete');
+  }
+
+  // ─── wire up ───
+  $('sendBtn').addEventListener('click', send);
+  $('msgInput').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+  $('organizeBtn').addEventListener('click', organize);
+  $('settingsBtn').addEventListener('click', openSettings);
+  $('connStatus').addEventListener('click', () => { if (!settings.apiKey) openSettings(); });
+  $('apiBannerBtn').addEventListener('click', () => refreshConnPill());
+  $('closeSettings').addEventListener('click', closeSettings);
+  $('closeSettings2').addEventListener('click', closeSettings);
+  $('saveKeyBtn').addEventListener('click', testAndSaveKey);
+  $('resetBtn').addEventListener('click', resetEverything);
+  $('settingsModal').addEventListener('click', (e) => { if (e.target.id === 'settingsModal') closeSettings(); });
+
+  $('identityBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('identityMenu').classList.toggle('open');
+  });
+  document.addEventListener('click', () => $('identityMenu').classList.remove('open'));
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      updatePlaceholder();
+      $('msgInput').focus();
+    });
+  });
+
+  // ─── go ───
+  renderAll();
+
+  // (no auto-open of settings — subscription auth is handled by start.command terminal)
+</script>
+
+</body>
+</html>

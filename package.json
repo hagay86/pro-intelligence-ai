@@ -1,0 +1,25 @@
+{
+  "name": "synapse",
+  "version": "0.2.0",
+  "description": "Learn from a professional through their AI",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "setup": "npm install && node --experimental-sqlite seed-hagay.js",
+    "seed": "node --experimental-sqlite seed-hagay.js",
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite --watch server.js",
+    "tunnel": "cloudflared tunnel --url http://localhost:3000"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@anthropic-ai/sdk": "^0.32.1",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
